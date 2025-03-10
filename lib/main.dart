@@ -3,6 +3,7 @@ import 'dart:async';
 import 'dart:ui';
 import 'package:geolocator/geolocator.dart';
 import 'package:provider/provider.dart';
+import 'package:rider_realtime_location/services/auth.dart';
 import 'package:rider_realtime_location/services/database_service.dart';
 import 'package:socket_io_client/socket_io_client.dart' as io;
 
@@ -18,7 +19,7 @@ void main()async{
   
   runApp(const MyApp());
 }
-
+ 
 void startBackgroundService() {
   final service = FlutterBackgroundService();
   service.startService();
@@ -32,7 +33,7 @@ void stopBackgroundService() {
 }
 Future<void> initializeService() async {
   final service = FlutterBackgroundService();
-
+  
   await service.configure(
     iosConfiguration: IosConfiguration(
       autoStart: true,
@@ -88,7 +89,9 @@ void onStart(ServiceInstance service) async {
     );
 
     Position position = await Geolocator.getCurrentPosition(locationSettings: locationSettings);
+    
     print(position.latitude.toString() + " "+position.longitude.toString());
+    
   });
 }
 
@@ -99,7 +102,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return StreamProvider.value(
-      value: DatabaseService().rider,
+      value: AuthService().rider,
       initialData: null,
       child: MaterialApp(
         debugShowCheckedModeBanner: false,

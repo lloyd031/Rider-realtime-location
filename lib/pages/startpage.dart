@@ -11,14 +11,17 @@ import 'package:rider_realtime_location/pages/auth/login.dart';
 import 'package:rider_realtime_location/pages/auth/signup.dart';
 
 class StartPage extends StatefulWidget {
-  const StartPage({super.key});
+  final String? rid;
+  final String? ad_id;
+  StartPage(this.rid,this.ad_id);
   
   @override
   State<StartPage> createState() => _StartPageState();
 }
 
 class _StartPageState extends State<StartPage> {
-        final _db=DatabaseService();
+        
+        
         bool runOnBackground=false;
         String location="";
         late double lat;
@@ -60,26 +63,7 @@ class _StartPageState extends State<StartPage> {
         return await Geolocator.getCurrentPosition();
       }  
       
-     void _liveLocation()async{
-    late LocationSettings locationSettings= LocationSettings(
-          accuracy: LocationAccuracy.high,
-          distanceFilter: 100,
-          
-      );
-    
-   
-    
-    StreamSubscription<Position> positionStream = Geolocator.getPositionStream(locationSettings: locationSettings).listen(
-        (Position? position) {
-            setState(() {
-              location= "${position!.latitude} ${position.longitude}";
-              lat=position!.latitude;
-              long=position.longitude;
-            });
-            _db.trackLocation(position!.latitude, position.longitude);
-            _goToLocation();
-        });
-     }
+     
 
       
     
@@ -110,8 +94,29 @@ class _StartPageState extends State<StartPage> {
     }
   @override
   Widget build(BuildContext context) {
+    final _db=DatabaseService(riderId: widget.rid);
+    void _liveLocation()async{
+    late LocationSettings locationSettings= LocationSettings(
+          accuracy: LocationAccuracy.high,
+          distanceFilter: 100,
+          
+      );
     
- 
+   
+    
+    StreamSubscription<Position> positionStream = Geolocator.getPositionStream(locationSettings: locationSettings).listen(
+        (Position? position) {
+            setState(() {
+              location= "${position!.latitude} ${position.longitude}";
+              lat=position!.latitude;
+              long=position.longitude;
+            });
+            if(runOnBackground==true){
+              _db.createAssignedAdDocOpDate("${widget.ad_id}", position!.latitude, position.longitude);
+            }
+            _goToLocation();
+        });
+     }
     
     return Scaffold(
       body: SafeArea(child: 
@@ -147,10 +152,7 @@ class _StartPageState extends State<StartPage> {
             
           }, child: Text((runOnBackground==false)?"START":"STOP")),
 
-          SizedBox(height: 8,),
-          TextButton(onPressed: ()async{
-             _db.signOut();
-          }, child: Text("Sign out"))
+          
         ],
       )
       ),

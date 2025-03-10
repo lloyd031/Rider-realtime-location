@@ -2,7 +2,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:rider_realtime_location/pages/loading.dart';
-import 'package:rider_realtime_location/services/database_service.dart';
+import 'package:rider_realtime_location/services/auth.dart';
 import 'package:rider_realtime_location/pages/startpage.dart';
 
 class LogIn extends StatefulWidget {
@@ -13,7 +13,7 @@ class LogIn extends StatefulWidget {
 }
 
 class _LogInState extends State<LogIn> {
-  final  auth=DatabaseService();
+  final  auth=AuthService();
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
   final _formKey=GlobalKey<FormState>();
@@ -26,17 +26,7 @@ class _LogInState extends State<LogIn> {
     passwordController.dispose();
     super.dispose();
   }
-  void _signIn()async{
-    String email=emailController.text;
-    String pw=passwordController.text;
-    User? user = await auth.signIn(email, pw);
-    if(user!=null){
-      print("sign up suceses");
-      Navigator.push(context, MaterialPageRoute(builder: (context)=>StartPage()));
-    }else{
-      print("error");
-    }
-  }
+  
   @override
   Widget build(BuildContext context) {
     

@@ -17,19 +17,16 @@ class Wrapper extends StatefulWidget {
 }
 
 class _WrapperState extends State<Wrapper> {
-  final  auth=DatabaseService();
-  
+ 
   @override
   Widget build(BuildContext context) {
-    
     final user = Provider.of<RiderObj?>(context);
     if(user==null)
     {
       return Authenticate();
     }else
     {
-      
-      return Home();
+      return Home(user.uid);
       
     }
   }

@@ -1,27 +1,31 @@
 import 'package:flutter/material.dart';
-import 'package:rider_realtime_location/pages/auth/signup.dart';
+import 'package:provider/provider.dart';
+import 'package:rider_realtime_location/models/Ad.dart';
+import 'package:rider_realtime_location/pages/adlist.dart';
 import 'package:rider_realtime_location/pages/loading.dart';
 import 'package:rider_realtime_location/pages/startpage.dart';
+import 'package:rider_realtime_location/services/auth.dart';
 import 'package:rider_realtime_location/services/database_service.dart';
 
 class Home extends StatefulWidget {
-  const Home({super.key});
+  final String? rid;
+  const Home(this.rid);
 
   @override
   State<Home> createState() => _HomeState();
 }
 
 class _HomeState extends State<Home> {
-  final  auth=DatabaseService();
+  final  auth=AuthService();
   bool loading=false;
   @override
   Widget build(BuildContext context) {
     return(loading==true)?Loading(): Scaffold(
-      body: SafeArea(child: Column(
+      body: SafeArea(child:StreamProvider<List<Ad_Model>>.value(
+        value: DatabaseService(riderId:widget.rid).getAssignedAd, initialData: List.empty(),
+        child:Column(
         children: [
-          TextButton(onPressed: (){
-            Navigator.push(context, MaterialPageRoute(builder: (context)=>StartPage()));
-          }, child: Text("ad 1")),
+          Ad_List(widget.rid),
           SizedBox(height: 8,),
           TextButton(onPressed: ()async{
             setState(() {
@@ -37,7 +41,10 @@ class _HomeState extends State<Home> {
             //Navigator.push(context, MaterialPageRoute(builder: (context)=>SignUp()));
           }, child: Text("Sing Out")),
         ],
-      )),
+      ) ,) ),
     );
   }
 }
+/**
+ * 
+ */
