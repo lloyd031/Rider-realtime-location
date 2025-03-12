@@ -14,18 +14,12 @@ class LogIn extends StatefulWidget {
 
 class _LogInState extends State<LogIn> {
   final  auth=AuthService();
-  final TextEditingController emailController = TextEditingController();
-  final TextEditingController passwordController = TextEditingController();
+ 
   final _formKey=GlobalKey<FormState>();
   String error=" ";
   bool loading=false;
-  @override
-  void dispose() {
-    // TODO: implement dispose
-    emailController.dispose();
-    passwordController.dispose();
-    super.dispose();
-  }
+  String email="";
+  String pw="";
   
   @override
   Widget build(BuildContext context) {
@@ -34,57 +28,63 @@ class _LogInState extends State<LogIn> {
       appBar: AppBar(
         title: Text('Login'),
       ),
-      body: Expanded(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                TextFormField(
-                  controller: emailController,
-                  decoration: InputDecoration(
-                    labelText: 'Email',
-                    border: OutlineInputBorder(),
-                  ),
-                  keyboardType: TextInputType.emailAddress,
-                  validator: (val)=>val!.isEmpty?"Rquired":null,
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              TextFormField(
+                decoration: InputDecoration(
+                  labelText: 'Email',
+                  border: OutlineInputBorder(),
                 ),
-                SizedBox(height: 16),
-                TextFormField(
-                  controller: passwordController,
-                  decoration: InputDecoration(
-                    labelText: 'Password',
-                    border: OutlineInputBorder(),
-                  ),
-                  validator: (val)=>val!.isEmpty?"Rquired":null,
-                  obscureText: true,
+                keyboardType: TextInputType.emailAddress,
+                onChanged: (val){
+                  setState(() {
+                    email=val;
+                  });
+                },
+                validator: (val)=>val!.isEmpty?"Rquired":null,
+              ),
+              SizedBox(height: 16),
+              TextFormField(
+                decoration: InputDecoration(
+                  labelText: 'Password',
+                  border: OutlineInputBorder(),
                 ),
+                onChanged: (val){
+                  setState(() {
+                    pw=val;
+                  });
+                },
+                validator: (val)=>val!.isEmpty?"Rquired":null,
+                obscureText: true,
+              ),
+              SizedBox(height: 16),
+              Text(error , style: TextStyle(color: Colors.red),),
+              SizedBox(height: 16),
+              TextButton(onPressed:(){widget.switchAuth();}, child:Text("Signup instead")),
                 SizedBox(height: 16),
-                Text(error , style: TextStyle(color: Colors.red),),
-                SizedBox(height: 16),
-                TextButton(onPressed:(){widget.switchAuth();}, child:Text("Signup instead")),
-                  SizedBox(height: 16),
-                ElevatedButton(
-                  onPressed: ()async{
-                    if(_formKey.currentState!.validate()){
+              ElevatedButton(
+                onPressed: ()async{
+                  if(_formKey.currentState!.validate()){
+                      setState(() {
+                        loading=true;
+                      });
+                      dynamic result= await auth.signIn(email, pw);
+                      if(result==null){
                         setState(() {
-                          loading=true;
-                        });
-                        dynamic result= await auth.signIn(emailController.text, passwordController.text);
-                        if(result==null){
-                          setState(() {
-                             error="Invalid email or password";
-                             loading=false;
-                          });;
-                        }else{}
-                    }
-                  },
-                  child: Text('Log In'),
-                ),
-              ],
-            ),
+                           error="Invalid email or password";
+                           loading=false;
+                        });;
+                      }else{}
+                  }
+                },
+                child: Text('Log In'),
+              ),
+            ],
           ),
         ),
       ),

@@ -2,9 +2,9 @@
 import 'dart:async';
 import 'dart:ui';
 import 'package:geolocator/geolocator.dart';
+import 'package:hive_flutter/adapters.dart';
 import 'package:provider/provider.dart';
 import 'package:rider_realtime_location/services/auth.dart';
-import 'package:rider_realtime_location/services/database_service.dart';
 import 'package:socket_io_client/socket_io_client.dart' as io;
 
 import 'package:flutter/material.dart';
@@ -16,7 +16,8 @@ void main()async{
   //WidgetsFlutterBinding.ensureInitialized();
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
-  
+  await Hive.initFlutter();
+  var box = await Hive.openBox('riderBox');
   runApp(const MyApp());
 }
  
@@ -103,7 +104,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return StreamProvider.value(
       value: AuthService().rider,
-      initialData: null,
+      initialData:null,
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
         title: 'Flutter Demo',

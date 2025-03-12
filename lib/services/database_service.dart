@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:rider_realtime_location/models/Ad.dart';
 
+
 class DatabaseService {
   //databse crud
   final _db=FirebaseFirestore.instance;
@@ -26,7 +27,8 @@ class DatabaseService {
     String dateFormat=now.month.toString() +"-"+now.day.toString()+"-"+now.year.toString();
      return await riderCollection.doc(riderId).collection("assigned_ads").doc(ad_id).collection(dateFormat).doc().set({
       'lat':lat,
-      'long':long
+      'long':long,
+      'createdAt':FieldValue.serverTimestamp(),
      });
   }
 
@@ -41,5 +43,7 @@ class DatabaseService {
       return Ad_Model(doc.id);
     }).toList();
   }
+  // Function to sync unsynced locations with Firebase
   
   }
+  

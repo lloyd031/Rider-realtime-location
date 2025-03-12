@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:hive/hive.dart';
+import 'package:http/http.dart' as http;
 import 'package:rider_realtime_location/services/database_service.dart';
 import 'package:rider_realtime_location/main.dart';
 import 'package:geolocator/geolocator.dart';
@@ -20,10 +22,9 @@ class StartPage extends StatefulWidget {
 }
 
 class _StartPageState extends State<StartPage> {
-        
-        
+        List<dynamic> keys=[];
+        //start - all about geolocator and google map
         bool runOnBackground=false;
-        String location="";
         late double lat;
         late double long;
         Future<Position> _determinePosition() async {
@@ -61,23 +62,17 @@ class _StartPageState extends State<StartPage> {
         // When we reach here, permissions are granted and we can
         // continue accessing the position of the device.
         return await Geolocator.getCurrentPosition();
-      }  
+      } 
       
-     
-
       
-    
       @override
-    void initState() {
-      _determinePosition().then((value){
-              lat=value.latitude;
-              long=value.longitude;
-              setState(() {
-                location="$lat $long";
+      void initState() {
+        _determinePosition().then((value){
+                lat=value.latitude;
+                long=value.longitude;
               });
-             });
-      super.initState();
-    }
+        super.initState();
+      }
 
 
     final Completer<GoogleMapController> _controller =
@@ -86,75 +81,142 @@ class _StartPageState extends State<StartPage> {
       static const CameraPosition _duma = CameraPosition(
       target: LatLng(9.3068, 123.3054),
       zoom: 14.4746,);
+
       Future<void> _goToLocation() async {
        GoogleMapController controller = await _controller.future;
       await controller.animateCamera(CameraUpdate.newCameraPosition(CameraPosition(
         target: LatLng(lat, long),
         zoom: 16)));
     }
+    //start - all about geolocator and google map
+
+    //offline db
+    final _myBox=Hive.box('riderBox');
+    //write
+    void writeData(String ad_id, String rider_id, double lat, double long,String? timestamp){
+      _myBox.add([rider_id, ad_id, lat, long, timestamp]);
+      refreshData();
+    }
+    //read
+    List<dynamic> readData(){
+    
+      for(int i=0; i<_myBox.length; i++){
+        final _key=_myBox.getAt(i);
+        keys.add(_key);
+      }
+      return keys;
+    }
+    //delete
+    void deleteData(){
+      _myBox.clear();
+      print("deleted");
+    }
+    List<dynamic> res =[];
+    void refreshData(){
+      setState(() {
+       res = readData();
+      });
+    }
   @override
   Widget build(BuildContext context) {
-    final _db=DatabaseService(riderId: widget.rid);
+    
+    //final _db=DatabaseService(riderId: widget.rid);
+    //start still related to geolocator and google map
     void _liveLocation()async{
     late LocationSettings locationSettings= LocationSettings(
           accuracy: LocationAccuracy.high,
-          distanceFilter: 100,
+          distanceFilter: 10,
           
       );
-    
-   
-    
     StreamSubscription<Position> positionStream = Geolocator.getPositionStream(locationSettings: locationSettings).listen(
         (Position? position) {
             setState(() {
-              location= "${position!.latitude} ${position.longitude}";
               lat=position!.latitude;
               long=position.longitude;
             });
             if(runOnBackground==true){
-              _db.createAssignedAdDocOpDate("${widget.ad_id}", position!.latitude, position.longitude);
+              //_db.createAssignedAdDocOpDate("${widget.ad_id}", position!.latitude, position.longitude);
+              DateTime now = DateTime.now();
+              String timestamp="${now.month}-${now.day}-${now.second}-${now.year}";
+             //writeData(widget.rid, widget.ad_id,position!.latitude, position.longitude,);
             }
             _goToLocation();
         });
      }
-    
-    return Scaffold(
-      body: SafeArea(child: 
-      Column(
-        children: [
-          Text(location),
-          SizedBox(height: 8,),
-          Container(
-            height: 500,
-            child: GoogleMap(
-              mapType: MapType.terrain,
-              onMapCreated: (GoogleMapController controller) {
-              _controller.complete(controller);
-            },
-              initialCameraPosition: _duma,
-              markers:(!_controller.isCompleted)?{}:{Marker(
-                position: LatLng(lat, long),
-                markerId: MarkerId('1'),),
-                }),
-          ),
-          SizedBox(height: 8,),
-          TextButton(onPressed: ()async{
-             _liveLocation();
-             if(runOnBackground==false){
-                await initializeService();
-             }else{
-                stopBackgroundService();
-             }
-             
-             setState(() {
-               runOnBackground=!runOnBackground;
-             });
+    //end still related to geolocator and google map.
+    return WillPopScope(
+      onWillPop: ()async{ 
+        return false;
+       },
+      child: Scaffold(
+        body: SafeArea(child: 
+        Column(
+          mainAxisSize: MainAxisSize.max,
+          mainAxisAlignment: MainAxisAlignment.start,
+          children: [
+            Expanded(
+              flex: 1,
+              child: GoogleMap(
+                mapType: MapType.terrain,
+                onMapCreated: (GoogleMapController controller) {
+                _controller.complete(controller);
+              },
+                initialCameraPosition: _duma,
+                markers:(!_controller.isCompleted)?{}:{Marker(
+                  position: LatLng(lat, long),
+                  markerId: MarkerId('1'),),
+                  }),
+            ),
+            Container(
+              height: 100,
+              child: SingleChildScrollView(
+                scrollDirection: Axis.vertical,
+                child: Column(
+                  children: [
+                    for(int i=0; i<keys.length; i++)
+                    Text("${keys[i][0]} - ${keys[i][1]} - ${keys[i][2]}")
+                  ],
+                ),
+              ),
+            ),
+            Row(
+              children: [
+                Expanded(
+                  flex: 1,
+                  child: TextButton(
+                    style: TextButton.styleFrom(
+                    foregroundColor: Colors.white, backgroundColor:(runOnBackground==true)?Colors.red[500]: Colors.blue,  // Set the text color
+                    padding: EdgeInsets.symmetric(horizontal: 20, vertical: 20), // Adjust padding
+                    shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.zero,  // No rounded corners, making it rectangular
+                    ),
+                  ),
+                  onPressed: ()async{
+                    
+                    _goToLocation();
+                   _liveLocation();
+                   if(runOnBackground==false){
+                      //_db.createAssignedAdDocOpDate("${widget.ad_id}", lat, long);
+                      await initializeService();
+                      
+                   }else{
+                      stopBackgroundService();
+                      Navigator.pop(context);
+                   }
+                   
+                   setState(() {
+                     runOnBackground=!runOnBackground;
+                   });
+                    
+                   }, child: Text((runOnBackground==false)?"START":"STOP")),
+                )
+              ],
+            ),
+      
             
-          }, child: Text((runOnBackground==false)?"START":"STOP")),
-
-          
-        ],
-      )
+          ],
+        )
+        ),
       ),
     );
   }

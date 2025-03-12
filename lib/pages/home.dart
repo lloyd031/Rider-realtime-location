@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:hive/hive.dart';
 import 'package:provider/provider.dart';
 import 'package:rider_realtime_location/models/Ad.dart';
 import 'package:rider_realtime_location/pages/adlist.dart';
 import 'package:rider_realtime_location/pages/loading.dart';
-import 'package:rider_realtime_location/pages/startpage.dart';
 import 'package:rider_realtime_location/services/auth.dart';
 import 'package:rider_realtime_location/services/database_service.dart';
 
@@ -16,30 +16,108 @@ class Home extends StatefulWidget {
 }
 
 class _HomeState extends State<Home> {
+  List<dynamic> recordList=[];
   final  auth=AuthService();
-  bool loading=false;
+  
+  
+  
   @override
   Widget build(BuildContext context) {
+    bool loading=false;
     return(loading==true)?Loading(): Scaffold(
+      appBar:  AppBar(
+        leading: Builder( builder: (BuildContext context) { return IconButton(
+          onPressed:(){Scaffold.of(context).openDrawer();}, 
+          icon: Icon(Icons.menu,color: Colors.blue,size: 25,)); }),
+      elevation: 0,
+      backgroundColor:Colors.white,
+      
+      ),
+      drawer: Drawer(
+        child: ListView(
+              padding: EdgeInsets.zero,
+              children: [
+                UserAccountsDrawerHeader(
+                    accountName: Text('Hello'), accountEmail: Text('hello@gmgmg'),
+                    currentAccountPicture: CircleAvatar(
+                      child: ClipOval(
+                        child: Image.network('https://images.pexels.com/photos/1040881/pexels-photo-1040881.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
+                        width: 90,
+                        height:90,
+                        fit:BoxFit.cover),
+                      ),
+                    ),
+                    decoration: const BoxDecoration(
+                      color:Color.fromRGBO(215,15,100, 1),
+                      image: DecorationImage(image: NetworkImage('https://images.pexels.com/photos/323311/pexels-photo-323311.jpeg?auto=compress&cs=tinysrgb&w=400'
+                      ),
+                      fit:BoxFit.cover,
+                      ),
+                    ),
+                    ),
+                ListTile(
+                  leading:const Icon(Icons.person),
+                  title:const Text('My Profile'),
+                  onTap: (){},
+                ),
+                ListTile(
+                  leading:const Icon(Icons.add_business_rounded),
+                  title:const Text('My Ads'),
+                ),
+                ListTile(
+                  leading:const Icon(Icons.motorcycle),
+                  title:const Text('My Rides'),
+                  
+                ),
+                const Divider(),
+                ListTile(
+                  leading:const Icon(Icons.star),
+                  title:const Text('Rate App'),
+                  onTap: (){},
+                ),
+                ListTile(
+                  leading:const Icon(Icons.share),
+                  title:const Text('Share'),
+                  onTap: (){},
+                ),
+                /**
+                 * const Divider(),
+                ListTile(
+                  leading:const Icon(Icons.notifications),
+                  title:const Text('Notifications'),
+                  onTap: (){},
+                  trailing: ClipOval(
+                    child: Container(
+                      color:Colors.red,
+                      width:20,
+                      height:20,
+                      child:const Center(
+                        child: Text('2',
+                        style: TextStyle(fontSize: 12, color: Colors.white),),
+                      )
+                    ),
+                  ),
+                ),
+                 */
+                const Divider(),
+                ListTile(
+                  leading:const Icon(Icons.exit_to_app),
+                  title:const Text('Signout'),
+                  onTap: ()async{
+                   await auth.signOut();
+                  },
+                ),
+              ],
+            ),
+      ),
+          
+        
       body: SafeArea(child:StreamProvider<List<Ad_Model>>.value(
         value: DatabaseService(riderId:widget.rid).getAssignedAd, initialData: List.empty(),
         child:Column(
         children: [
           Ad_List(widget.rid),
-          SizedBox(height: 8,),
-          TextButton(onPressed: ()async{
-            setState(() {
-              loading=true;
-            });
-            dynamic res = await auth.signOut();
-            if(res==null){
-              setState(() {
-                loading=false;
-              });
-            }
-            
-            //Navigator.push(context, MaterialPageRoute(builder: (context)=>SignUp()));
-          }, child: Text("Sing Out")),
+          
         ],
       ) ,) ),
     );
