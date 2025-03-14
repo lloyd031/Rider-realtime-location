@@ -1,27 +1,31 @@
 import 'dart:async';
+import 'dart:io';
 
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 import 'package:http/http.dart' as http;
+import 'package:rider_realtime_location/pages/loading.dart';
 import 'package:rider_realtime_location/services/database_service.dart';
 import 'package:rider_realtime_location/main.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:flutter/services.dart';
-import 'package:rider_realtime_location/pages/auth/login.dart';
-import 'package:rider_realtime_location/pages/auth/signup.dart';
 
 class StartPage extends StatefulWidget {
   final String? rid;
   final String? ad_id;
-  StartPage(this.rid,this.ad_id);
+  final bool? viewRide;
+  StartPage(this.rid,this.ad_id,this.viewRide);
   
   @override
   State<StartPage> createState() => _StartPageState();
 }
 
 class _StartPageState extends State<StartPage> {
+        bool isTimerRun=false; // used to make sure that timer only start once
+        Set<Polyline> _poly={};
+        List<LatLng> points=[];
+        bool loading=false;
         List<dynamic> keys=[];
         //start - all about geolocator and google map
         bool runOnBackground=false;
@@ -31,6 +35,7 @@ class _StartPageState extends State<StartPage> {
         bool locServiceEnabled;
         LocationPermission permission;
 
+        
         // Test if location services are enabled.
         locServiceEnabled = await Geolocator.isLocationServiceEnabled();
         if (!locServiceEnabled) {
@@ -71,9 +76,11 @@ class _StartPageState extends State<StartPage> {
                 lat=value.latitude;
                 long=value.longitude;
               });
+        readData();
         super.initState();
       }
-
+   
+    
 
     final Completer<GoogleMapController> _controller =
       Completer<GoogleMapController>();
@@ -87,40 +94,126 @@ class _StartPageState extends State<StartPage> {
       await controller.animateCamera(CameraUpdate.newCameraPosition(CameraPosition(
         target: LatLng(lat, long),
         zoom: 16)));
+      
     }
     //start - all about geolocator and google map
 
     //offline db
     final _myBox=Hive.box('riderBox');
     //write
-    void writeData(String ad_id, String rider_id, double lat, double long,String? timestamp){
-      _myBox.add([rider_id, ad_id, lat, long, timestamp]);
-      refreshData();
-    }
-    //read
-    List<dynamic> readData(){
-    
-      for(int i=0; i<_myBox.length; i++){
-        final _key=_myBox.getAt(i);
-        keys.add(_key);
-      }
-      return keys;
-    }
-    //delete
-    void deleteData(){
-      _myBox.clear();
-      print("deleted");
-    }
-    List<dynamic> res =[];
-    void refreshData(){
+    void writeData(double lat, double long,String? timestamp){
+      _myBox.put(timestamp,[widget.rid, widget.ad_id, lat, long, timestamp]);
       setState(() {
-       res = readData();
+        readData();
       });
     }
+    
+    //read
+    void readData(){
+      keys=[];
+      for(int i=0; i<_myBox.length; i++){
+        final _key=_myBox.getAt(i);
+        if(_key[0]==widget.rid && _key[1]==widget.ad_id ){
+          keys.add(_key);
+        }
+        
+      }
+    }
+    
+    //timer
+    int _seconds = 00;
+    int _mins = 00;
+    int _hours = 00; // The timer count
+  late Timer _timer; // Timer object
+  void _starTimer() {
+    _timer = Timer.periodic(Duration(seconds: 1 ), (timer) {
+      setState(() {
+        if(_seconds==59){
+          _seconds=0;
+          if(_mins==59){
+            _mins=0;
+            _hours++;
+          }else{
+            _mins++;
+          }
+        }else{
+          _seconds++;
+        }
+      });
+    });
+    
+  }
+  String _twoDigitFormat(int number) {
+    return number.toString().padLeft(2, '0');
+  }
+
+  //sync  to firebase if connected to internet
+    void SyncData(DatabaseService db)async{
+      try {
+                        final response = await http.get(Uri.parse('https://www.google.com'));
+                        if (response.statusCode == 200) {
+                          setState(() {
+                            loading=true;
+                          });
+                          for(int i=0; i<keys.length; i++)
+                          {
+                            //_myBox.add([widget.rid, widget.ad_id, lat, long, timestamp]);
+                             await db.createAssignedAdDocOpDate(keys[i][1], keys[i][2], keys[i][3],keys[i][4]);
+                             print(keys[i]);
+                             _myBox.delete(keys[i][4]);
+                             
+                          }
+                          
+                          back();
+                        } else {
+                          setState(() {
+                            runOnBackground=true;
+                            loading=false;
+                             _showDialog(db);
+                          });
+                        }
+                      } on SocketException catch (_) {
+                        setState(() {
+                          runOnBackground=true;
+                          loading=false;
+                           _showDialog(db);
+                        });
+                      }
+    }
+    void back(){
+      stopBackgroundService();
+      setState(() {
+          runOnBackground=false;
+          });
+      Navigator.pop(context);
+    }
+  //show dialog if no internet
+        void _showDialog(DatabaseService db){
+          showDialog(context: context, builder: 
+          (context){
+            return CupertinoAlertDialog(
+              title: Text('No internet connection'),
+              content: Text("You are not connected to the internet. All data will be saved locally. Make sure to sync it later."),
+              actions: [
+                MaterialButton(onPressed: (){
+                  Navigator.pop(context);
+                  back();
+                },
+                child:Text("OKAY",style: TextStyle(color: Colors.blue),),),
+                MaterialButton(onPressed: (){
+                  Navigator.pop(context);
+                  SyncData(db);
+                },
+                child:Text("TRY AGAIN",style: TextStyle(color: Colors.green)),)
+              ],
+            );
+          });
+        }
+        
   @override
   Widget build(BuildContext context) {
     
-    //final _db=DatabaseService(riderId: widget.rid);
+    final _db=DatabaseService(riderId: widget.rid);
     //start still related to geolocator and google map
     void _liveLocation()async{
     late LocationSettings locationSettings= LocationSettings(
@@ -133,84 +226,137 @@ class _StartPageState extends State<StartPage> {
             setState(() {
               lat=position!.latitude;
               long=position.longitude;
+              points.add(LatLng(lat, long));
+              _poly.clear();
+              _poly.add(Polyline(polylineId: PolylineId("id"),
+              points: points,
+              width: 8,
+              color: Colors.deepOrange));
             });
             if(runOnBackground==true){
+              if(isTimerRun==false){
+                isTimerRun=true;
+                _starTimer();
+              }
               //_db.createAssignedAdDocOpDate("${widget.ad_id}", position!.latitude, position.longitude);
               DateTime now = DateTime.now();
-              String timestamp="${now.month}-${now.day}-${now.second}-${now.year}";
-             //writeData(widget.rid, widget.ad_id,position!.latitude, position.longitude,);
+              String timestamp="${now.day}-${now.hour}-${now.minute}-${now.second}-${now.microsecond}";
+              writeData(lat, long,timestamp);
+              _goToLocation();
             }
-            _goToLocation();
+            
         });
      }
     //end still related to geolocator and google map.
+     
     return WillPopScope(
       onWillPop: ()async{ 
         return false;
        },
-      child: Scaffold(
+      child:(loading==true)?Loading(): Scaffold(
+        appBar:  AppBar(
+          title: Text("${widget.ad_id}", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black87),),
+          automaticallyImplyLeading: false,
+          elevation: 1,
+          shadowColor: Colors.black,
+          backgroundColor:Colors.white,
+          actions: <Widget>[
+          TextButton(onPressed: ()async{
+                if(widget.viewRide==false){
+                  if(runOnBackground==false){
+                      
+                      _goToLocation();
+                      _liveLocation();
+                      await initializeService();
+                      setState(() {
+                        runOnBackground=true;
+                      });
+                      
+                      
+                      
+                   }else{
+                        
+                      SyncData(_db);
+                      
+                   }
+                    
+                   
+          
+                }else{
+                  
+                }
+                
+                }, child: Text((runOnBackground==false)?"START":"STOP", style: TextStyle(color:(runOnBackground==false)?Colors.green[700]:Colors.red[700]),)),
+          if(runOnBackground==false)
+          TextButton(onPressed: ()async{
+                 Navigator.pop(context); 
+          }, child: Text("BACK", style: TextStyle(color:Colors.red[700]),))
+        ],
+          
+      ),
         body: SafeArea(child: 
         Column(
           mainAxisSize: MainAxisSize.max,
           mainAxisAlignment: MainAxisAlignment.start,
           children: [
+            
             Expanded(
               flex: 1,
               child: GoogleMap(
+                polylines: _poly,
                 mapType: MapType.terrain,
                 onMapCreated: (GoogleMapController controller) {
                 _controller.complete(controller);
+                
               },
                 initialCameraPosition: _duma,
                 markers:(!_controller.isCompleted)?{}:{Marker(
                   position: LatLng(lat, long),
                   markerId: MarkerId('1'),),
-                  }),
+                },
+                ),
             ),
-            Container(
+            /**
+             * Container(
               height: 100,
               child: SingleChildScrollView(
                 scrollDirection: Axis.vertical,
                 child: Column(
                   children: [
                     for(int i=0; i<keys.length; i++)
-                    Text("${keys[i][0]} - ${keys[i][1]} - ${keys[i][2]}")
+                    Text("${keys[i][1]} - ${keys[i][2]} - ${keys[i][3]}")
                   ],
                 ),
               ),
             ),
-            Row(
-              children: [
-                Expanded(
-                  flex: 1,
-                  child: TextButton(
-                    style: TextButton.styleFrom(
-                    foregroundColor: Colors.white, backgroundColor:(runOnBackground==true)?Colors.red[500]: Colors.blue,  // Set the text color
-                    padding: EdgeInsets.symmetric(horizontal: 20, vertical: 20), // Adjust padding
-                    shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.zero,  // No rounded corners, making it rectangular
-                    ),
+             */
+            Container(
+              padding: EdgeInsets.all(8),
+              height: 45, // Adjust the height as needed
+              decoration: BoxDecoration(
+                color: Colors.white, // White color for the container
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(1), // Shadow color
+                    spreadRadius: 2, // Spread radius of the shadow
+                    blurRadius: 4, // Blur radius for the shadow
+                    offset: Offset(0, 4), // Shadow position (top shadow)
                   ),
-                  onPressed: ()async{
-                    
-                    _goToLocation();
-                   _liveLocation();
-                   if(runOnBackground==false){
-                      //_db.createAssignedAdDocOpDate("${widget.ad_id}", lat, long);
-                      await initializeService();
-                      
-                   }else{
-                      stopBackgroundService();
-                      Navigator.pop(context);
-                   }
-                   
-                   setState(() {
-                     runOnBackground=!runOnBackground;
-                   });
-                    
-                   }, child: Text((runOnBackground==false)?"START":"STOP")),
-                )
-              ],
+                ],
+              ),
+              child:Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(Icons.timer_outlined,color:(runOnBackground==false)? Colors.red:Colors.green,),
+                          SizedBox(width: 8,),
+                          Text("Location change", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),)
+                        ],
+                      ),
+                      Text("${_twoDigitFormat(_hours)}:${_twoDigitFormat(_mins)}:${_twoDigitFormat(_seconds)}", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color:(runOnBackground==false)? Colors.black54:Colors.black),)
+                    ],
+                ),
             ),
       
             

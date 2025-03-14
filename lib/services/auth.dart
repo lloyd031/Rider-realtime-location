@@ -4,6 +4,7 @@ import 'package:rider_realtime_location/models/rider.dart';
 import 'package:rider_realtime_location/services/database_service.dart';
 
 class AuthService {
+  
   //databse crud
   final _auth=FirebaseAuth.instance;
   
@@ -22,7 +23,9 @@ class AuthService {
   //signup with email and password
    Future signUp(String email, String pw) async
    {
-      try{
+      // ignore: unrelated_type_equality_checks
+      
+        try{
           UserCredential result = await _auth.createUserWithEmailAndPassword(email: email, password: pw);
           User? user=result.user;
           DatabaseService _db= DatabaseService(riderId: user!.uid);
@@ -38,10 +41,13 @@ class AuthService {
           print(e.toString());
           return null;
       }
+      
    }
  Future signIn(String email, String password) async
    {
-      try{
+      // ignore: unrelated_type_equality_checks
+      
+        try{
           UserCredential result = await _auth.signInWithEmailAndPassword(email: email, password: password);
           User? user=result.user;
           return _UserFromFirebase(user);
@@ -49,6 +55,7 @@ class AuthService {
       {
           return null;
       }
+      
    }
 
    //signout

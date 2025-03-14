@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:rider_realtime_location/models/Ad.dart';
+import 'package:rider_realtime_location/models/rides_model.dart';
 
 
 class DatabaseService {
@@ -7,7 +8,8 @@ class DatabaseService {
   final _db=FirebaseFirestore.instance;
   final CollectionReference riderCollection=FirebaseFirestore.instance.collection("rider");
   final String? riderId;
-  DatabaseService({required this.riderId});
+  final String? adId;
+  DatabaseService({required this.riderId, this.adId});
  
 
   Future storeDetails(String fn, String ln,)async{
@@ -22,17 +24,19 @@ class DatabaseService {
       'status':'inc'
      });
   }
-  Future createAssignedAdDocOpDate(String? ad_id, double lat, double long)async{
+  Future createAssignedAdDocOpDate(String? ad_id, double lat, double long,timestamp)async{
     DateTime now = DateTime.now();
     String dateFormat=now.month.toString() +"-"+now.day.toString()+"-"+now.year.toString();
-     return await riderCollection.doc(riderId).collection("assigned_ads").doc(ad_id).collection(dateFormat).doc().set({
+     return await riderCollection.doc(riderId).collection("assigned_ads").doc(ad_id).collection("rides").doc().set({
       'lat':lat,
       'long':long,
-      'createdAt':FieldValue.serverTimestamp(),
+      'ad_id':ad_id,
+      'created_at':dateFormat,
+      'timestamp':timestamp
      });
   }
 
-  //get prod stream
+  //get ad stream
   Stream<List<Ad_Model>> get getAssignedAd{
     return riderCollection.doc(riderId).collection("assigned_ads").snapshots().map(_adFromSnapShot);
   }
@@ -43,7 +47,23 @@ class DatabaseService {
       return Ad_Model(doc.id);
     }).toList();
   }
-  // Function to sync unsynced locations with Firebase
+
+  //get rides stream
+  
+  Stream<List<RidesModel>> get getRides{
+    return riderCollection.doc(riderId).collection("assigned_ads").doc(adId).collection("rides").snapshots().map(_ridesFromSnapShot);
+  }
+  List<RidesModel> _ridesFromSnapShot(QuerySnapshot snapshot)
+  {
+    return snapshot.docs.map((doc){
+      return RidesModel(doc.id,doc.get("lat"),doc.get('long'),doc.get('timestamp'),doc.get('created_at'));
+    }).toList();
+  }
+  
+    
+  
+  
+  
   
   }
   

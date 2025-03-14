@@ -1,8 +1,10 @@
+import 'dart:ffi';
+
 import 'package:flutter/material.dart';
-import 'package:hive/hive.dart';
 import 'package:provider/provider.dart';
 import 'package:rider_realtime_location/models/Ad.dart';
 import 'package:rider_realtime_location/pages/adlist.dart';
+import 'package:rider_realtime_location/pages/archive.dart';
 import 'package:rider_realtime_location/pages/loading.dart';
 import 'package:rider_realtime_location/services/auth.dart';
 import 'package:rider_realtime_location/services/database_service.dart';
@@ -16,10 +18,13 @@ class Home extends StatefulWidget {
 }
 
 class _HomeState extends State<Home> {
-  List<dynamic> recordList=[];
+  int screenView=1;
   final  auth=AuthService();
-  
-  
+  void switchScreen(int screenNumber){
+    setState(() {
+      screenView=screenNumber;
+    });
+  }
   
   @override
   Widget build(BuildContext context) {
@@ -48,7 +53,7 @@ class _HomeState extends State<Home> {
                       ),
                     ),
                     decoration: const BoxDecoration(
-                      color:Color.fromRGBO(215,15,100, 1),
+                      color:Colors.blue,
                       image: DecorationImage(image: NetworkImage('https://images.pexels.com/photos/323311/pexels-photo-323311.jpeg?auto=compress&cs=tinysrgb&w=400'
                       ),
                       fit:BoxFit.cover,
@@ -58,16 +63,35 @@ class _HomeState extends State<Home> {
                 ListTile(
                   leading:const Icon(Icons.person),
                   title:const Text('My Profile'),
-                  onTap: (){},
+                  onTap: (){
+                    switchScreen(0);
+                    Navigator.pop(context);
+                  },
                 ),
                 ListTile(
                   leading:const Icon(Icons.add_business_rounded),
                   title:const Text('My Ads'),
+                  onTap: (){
+                    switchScreen(1);
+                    Navigator.pop(context);
+                  },
                 ),
                 ListTile(
                   leading:const Icon(Icons.motorcycle),
                   title:const Text('My Rides'),
-                  
+                  onTap: (){
+                    switchScreen(2);
+                    Navigator.pop(context);
+                  },
+                ),
+                const Divider(),
+                ListTile(
+                  leading:const Icon(Icons.upload),
+                  title:const Text('Sync Data'),
+                  onTap: (){
+                    switchScreen(4);
+                    Navigator.pop(context);
+                  },
                 ),
                 const Divider(),
                 ListTile(
@@ -80,6 +104,7 @@ class _HomeState extends State<Home> {
                   title:const Text('Share'),
                   onTap: (){},
                 ),
+                
                 /**
                  * const Divider(),
                 ListTile(
@@ -111,13 +136,15 @@ class _HomeState extends State<Home> {
             ),
       ),
           
-        
-      body: SafeArea(child:StreamProvider<List<Ad_Model>>.value(
+      
+      body:SafeArea(child:StreamProvider<List<Ad_Model>>.value(
         value: DatabaseService(riderId:widget.rid).getAssignedAd, initialData: List.empty(),
-        child:Column(
+        child:(screenView==0)?Text("My Profile")
+        :(screenView==2)?Ad_List(widget.rid,true)
+        :(screenView==4)?Archive(rid: widget.rid,):
+        Column(
         children: [
-          Ad_List(widget.rid),
-          
+          Ad_List(widget.rid,false),
         ],
       ) ,) ),
     );
