@@ -16,16 +16,18 @@ class Archive extends StatefulWidget {
 }
 final _myBox=Hive.box('riderBox');
 List<dynamic> keys=[];
-bool showInternetMsg=false;
+List<dynamic> keysAll=[];
 bool loading=false;
 class _ArchiveState extends State<Archive> {
   void readData(){
       keys=[];
+      keysAll=[];
       for(int i=0; i<_myBox.length; i++){
         final _key=_myBox.getAt(i);
         if(_key[0]==widget.rid){
           keys.add(_key);
         }
+        keysAll.add(_key);
         
       }
     }
@@ -40,9 +42,9 @@ class _ArchiveState extends State<Archive> {
                           for(int i=0; i<keys.length; i++)
                           {
                             //_myBox.add([widget.rid, widget.ad_id, lat, long, timestamp]);
-                             await db.createAssignedAdDocOpDate(keys[i][1], keys[i][2], keys[i][3],keys[i][4]);
+                             await db.createAssignedAdDocOpDate(keys[i][1], keys[i][2], keys[i][3],keys[i][4],keys[i][5]);
                              print(keys[i]);
-                             _myBox.delete(keys[i][4]);
+                             _myBox.delete("${keys[i][5]}${keys[i][4]}");
                              
                           }
                           setState(() {
@@ -95,13 +97,33 @@ class _ArchiveState extends State<Archive> {
     
     return (loading==true)?Loading():Column(
       children: [
-        if(showInternetMsg==true)
-        Text("No internet access. please try again"),
-
-        Text("${keys.length}"),
+        Text("Trailmarks saved sa local db. this happen if dili ma sync sa app ang trailmarks due to internet error"),
+        SizedBox(
+          height: 20,
+        ),
+        Text("${keys.length}", style: TextStyle(fontWeight: FontWeight.bold),),
+        Text("numbers of trailmarks saved"),
+        SizedBox(
+          height: 20,
+        ),
         TextButton(onPressed: ()async{
           SyncData(_db);
-         }, child: Text("Sync"))
+         }, child: Text("Sync")),
+         SizedBox(
+          height: 20,
+        ),
+        Text("need pa ni e improve sir. "),
+        SizedBox(
+          height: 20,
+        ),
+        Text("${keysAll.length}", style: TextStyle(fontWeight: FontWeight.bold),),
+        Text("ignore this part"),
+        TextButton(onPressed: ()async{
+            _myBox.clear();
+          setState(() {
+           readData();
+          });
+         }, child: Text("Clear data")),
       ],
     );
   }

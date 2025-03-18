@@ -26,7 +26,18 @@ class _LocationsState extends State<Locations> {
       children: [
         for(int i=0; i<date.length; i++)
         TextButton(onPressed: (){
-             Navigator.push(context, MaterialPageRoute(builder: (context)=>StartPage(widget.rid,widget.adId,true)));
+            List<RidesModel>? myRides=[];
+            for(int j=0; j<ads.length; j++){
+              if(ads[j].createdAt==date[i]){
+                myRides.add(ads[j]);
+              }
+            }
+            print(myRides.length);
+            print(myRides.length);
+            print(myRides.length);
+            print(myRides.length);
+            print(myRides.length);
+             Navigator.push(context, MaterialPageRoute(builder: (context)=>StartPage(widget.rid,widget.adId,true,myRides)));
              },child: Text("${date[i]}")),
         
       ],

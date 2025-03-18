@@ -26,13 +26,13 @@ class _Ad_ListState extends State<Ad_List> {
     
      return Column(
       children: [
-        Text((widget.viewRide==false)?"Assigned Ads":"Rides History"),
+        Text((widget.viewRide==false)?"Assigned ads":"Mao ni ang mga trailmarks sa rider sir per date"),
         for(int i=0 ; i<ads!.length; i++)
         Column(
           children: [
             TextButton(onPressed: (){
               if(widget.viewRide==false){
-                Navigator.push(context, MaterialPageRoute(builder: (context)=>StartPage(widget.rid,ads[i].id,widget.viewRide)));
+                Navigator.push(context, MaterialPageRoute(builder: (context)=>StartPage(widget.rid,ads[i].id,widget.viewRide,null)));
               }else{
                 setState(() {
                   
@@ -46,7 +46,12 @@ class _Ad_ListState extends State<Ad_List> {
             initialData: List.empty(),
             child:Locations(rid: widget.rid,adId: ads[i].id,) ,)
           ],
-        ), 
+        ),
+        if(widget.viewRide==true) 
+        Text("Note: data fetched from firebase. Riders needs to sync their local db to firebase first in order to be shown here"),
+        SizedBox(
+          height: 20,
+        ),
       ],
     );
   }

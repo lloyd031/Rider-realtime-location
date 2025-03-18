@@ -5,6 +5,8 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 import 'package:http/http.dart' as http;
+import 'package:rider_realtime_location/models/Ad.dart';
+import 'package:rider_realtime_location/models/rides_model.dart';
 import 'package:rider_realtime_location/pages/loading.dart';
 import 'package:rider_realtime_location/services/database_service.dart';
 import 'package:rider_realtime_location/main.dart';
@@ -15,13 +17,15 @@ class StartPage extends StatefulWidget {
   final String? rid;
   final String? ad_id;
   final bool? viewRide;
-  StartPage(this.rid,this.ad_id,this.viewRide);
+  final List<RidesModel>? trailmark;
+  StartPage(this.rid,this.ad_id,this.viewRide, this.trailmark);
   
   @override
   State<StartPage> createState() => _StartPageState();
 }
 
 class _StartPageState extends State<StartPage> {
+        int keyframe=-1; // used to view riders trialmark history
         bool isTimerRun=false; // used to make sure that timer only start once
         Set<Polyline> _poly={};
         List<LatLng> points=[];
@@ -72,11 +76,13 @@ class _StartPageState extends State<StartPage> {
       
       @override
       void initState() {
-        _determinePosition().then((value){
+        if(widget.viewRide==false){
+          _determinePosition().then((value){
                 lat=value.latitude;
                 long=value.longitude;
               });
         readData();
+        }
         super.initState();
       }
    
@@ -101,8 +107,14 @@ class _StartPageState extends State<StartPage> {
     //offline db
     final _myBox=Hive.box('riderBox');
     //write
-    void writeData(double lat, double long,String? timestamp){
-      _myBox.put(timestamp,[widget.rid, widget.ad_id, lat, long, timestamp]);
+    Future writeData() async{
+      for(int i=0; i<points.length; i++){
+        DateTime now = DateTime.now();
+        String dateFormat=now.month.toString() +"-"+now.day.toString()+"-"+now.year.toString();
+        String timestamp=now.hour.toString() +"-"+now.minute.toString()+"-"+now.second.toString()+"-"+now.millisecond.toString();
+        await _myBox.put("$dateFormat$timestamp",[widget.rid, widget.ad_id, points[i].latitude, points[i].longitude, timestamp,dateFormat]);
+        
+      }
       setState(() {
         readData();
       });
@@ -155,17 +167,22 @@ class _StartPageState extends State<StartPage> {
                           setState(() {
                             loading=true;
                           });
-                          for(int i=0; i<keys.length; i++)
+                          
+                          for(int i=0; i<points.length; i++)
                           {
+                            DateTime now = DateTime.now();
+                            String dateFormat=now.month.toString() +"-"+now.day.toString()+"-"+now.year.toString();
+                            String timestamp=now.hour.toString() +"-"+now.minute.toString()+"-"+now.second.toString()+"-"+now.millisecond.toString();
                             //_myBox.add([widget.rid, widget.ad_id, lat, long, timestamp]);
-                             await db.createAssignedAdDocOpDate(keys[i][1], keys[i][2], keys[i][3],keys[i][4]);
-                             print(keys[i]);
-                             _myBox.delete(keys[i][4]);
+                             //(String? ad_id, double lat, double long,String timestamp, String createdAt)
+                             await db.createAssignedAdDocOpDate(widget.ad_id, points[i].latitude, points[i].longitude,timestamp,dateFormat);
                              
-                          }
+                             //_myBox.delete("${keys[i][5]}${keys[i][4]}");
+                           }
                           
                           back();
                         } else {
+                          
                           setState(() {
                             runOnBackground=true;
                             loading=false;
@@ -195,7 +212,12 @@ class _StartPageState extends State<StartPage> {
               title: Text('No internet connection'),
               content: Text("You are not connected to the internet. All data will be saved locally. Make sure to sync it later."),
               actions: [
-                MaterialButton(onPressed: (){
+                MaterialButton(onPressed: ()async{
+                  setState(() {
+                    loading=true;
+                  });
+                  
+                  await writeData();
                   Navigator.pop(context);
                   back();
                 },
@@ -209,7 +231,16 @@ class _StartPageState extends State<StartPage> {
             );
           });
         }
-        
+  void addPolyline(){
+      setState(() {
+        points.add(LatLng(lat, long));
+      _poly.clear();
+      _poly.add(Polyline(polylineId: PolylineId("id"),
+      points: points,
+      width: 8,
+      color: Colors.deepOrange));
+      });
+    }
   @override
   Widget build(BuildContext context) {
     
@@ -221,27 +252,22 @@ class _StartPageState extends State<StartPage> {
           distanceFilter: 10,
           
       );
+    
     StreamSubscription<Position> positionStream = Geolocator.getPositionStream(locationSettings: locationSettings).listen(
         (Position? position) {
             setState(() {
               lat=position!.latitude;
               long=position.longitude;
-              points.add(LatLng(lat, long));
-              _poly.clear();
-              _poly.add(Polyline(polylineId: PolylineId("id"),
-              points: points,
-              width: 8,
-              color: Colors.deepOrange));
-            });
+             });
             if(runOnBackground==true){
+               addPolyline();
               if(isTimerRun==false){
                 isTimerRun=true;
                 _starTimer();
               }
               //_db.createAssignedAdDocOpDate("${widget.ad_id}", position!.latitude, position.longitude);
-              DateTime now = DateTime.now();
-              String timestamp="${now.day}-${now.hour}-${now.minute}-${now.second}-${now.microsecond}";
-              writeData(lat, long,timestamp);
+              
+              //writeData(lat, long,timestamp);
               _goToLocation();
             }
             
@@ -284,6 +310,23 @@ class _StartPageState extends State<StartPage> {
           
                 }else{
                   
+                  if(keyframe<=widget.trailmark!.length){
+                  Timer _animate;
+                  _animate= Timer.periodic(Duration(seconds: 1 ), (timer) {
+                    setState(() {
+                        keyframe++;
+                        lat = widget.trailmark![keyframe].lat;
+                        long = widget.trailmark![keyframe].long;
+                        addPolyline();
+                        _goToLocation();
+                        if(isTimerRun==false){
+                          isTimerRun=true;
+                          _starTimer();
+                        }
+
+                    });
+                  });
+                  }
                 }
                 
                 }, child: Text((runOnBackground==false)?"START":"STOP", style: TextStyle(color:(runOnBackground==false)?Colors.green[700]:Colors.red[700]),)),

@@ -24,14 +24,13 @@ class DatabaseService {
       'status':'inc'
      });
   }
-  Future createAssignedAdDocOpDate(String? ad_id, double lat, double long,timestamp)async{
-    DateTime now = DateTime.now();
-    String dateFormat=now.month.toString() +"-"+now.day.toString()+"-"+now.year.toString();
+  Future createAssignedAdDocOpDate(String? ad_id, double lat, double long,String timestamp, String createdAt)async{
+    
      return await riderCollection.doc(riderId).collection("assigned_ads").doc(ad_id).collection("rides").doc().set({
       'lat':lat,
       'long':long,
       'ad_id':ad_id,
-      'created_at':dateFormat,
+      'created_at':createdAt,
       'timestamp':timestamp
      });
   }
@@ -51,7 +50,7 @@ class DatabaseService {
   //get rides stream
   
   Stream<List<RidesModel>> get getRides{
-    return riderCollection.doc(riderId).collection("assigned_ads").doc(adId).collection("rides").snapshots().map(_ridesFromSnapShot);
+    return riderCollection.doc(riderId).collection("assigned_ads").doc(adId).collection("rides").orderBy("timestamp").snapshots().map(_ridesFromSnapShot);
   }
   List<RidesModel> _ridesFromSnapShot(QuerySnapshot snapshot)
   {
