@@ -175,7 +175,9 @@ class _StartPageState extends State<StartPage> {
                             String timestamp=now.hour.toString() +"-"+now.minute.toString()+"-"+now.second.toString()+"-"+now.millisecond.toString();
                             //_myBox.add([widget.rid, widget.ad_id, lat, long, timestamp]);
                              //(String? ad_id, double lat, double long,String timestamp, String createdAt)
-                             await db.createAssignedAdDocOpDate(widget.ad_id, points[i].latitude, points[i].longitude,timestamp,dateFormat);
+                            await db.createAssignedAdDocOpDate(widget.ad_id, points[i].latitude, points[i].longitude,timestamp,dateFormat);
+                            
+                            
                              
                              //_myBox.delete("${keys[i][5]}${keys[i][4]}");
                            }
