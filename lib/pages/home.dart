@@ -30,11 +30,13 @@ class _HomeState extends State<Home> {
   Widget build(BuildContext context) {
     bool loading=false;
     return(loading==true)?Loading(): Scaffold(
+      backgroundColor: Colors.white,
       appBar:  AppBar(
         leading: Builder( builder: (BuildContext context) { return IconButton(
           onPressed:(){Scaffold.of(context).openDrawer();}, 
-          icon: Icon(Icons.menu,color: Colors.blue,size: 25,)); }),
-      elevation: 0,
+          icon: Icon(Icons.menu,color: Colors.red[600],size: 25,)); }),
+      elevation: 1,
+      shadowColor: Colors.black,
       backgroundColor:Colors.white,
       
       ),
@@ -138,12 +140,14 @@ class _HomeState extends State<Home> {
           
       
       body:SafeArea(child:StreamProvider<List<Ad_Model>>.value(
-        value: DatabaseService(riderId:widget.rid).getAssignedAd, initialData: List.empty(),
+        value: DatabaseService(riderId:widget.rid).getAssignedAd,
+        initialData: List.empty(),
         child:(screenView==0)?Text("My Profile")
         :(screenView==2)?Ad_List(widget.rid,true)
         :(screenView==4)?Archive(rid: widget.rid,):
         Column(
         children: [
+          
           Ad_List(widget.rid,false),
         ],
       ) ,) ),

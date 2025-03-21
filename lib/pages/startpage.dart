@@ -15,10 +15,10 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 class StartPage extends StatefulWidget {
   final String? rid;
-  final String? ad_id;
+  final Ad_Model? ad;
   final bool? viewRide;
   final List<RidesModel>? trailmark;
-  StartPage(this.rid,this.ad_id,this.viewRide, this.trailmark);
+  StartPage(this.rid,this.ad,this.viewRide, this.trailmark);
   
   @override
   State<StartPage> createState() => _StartPageState();
@@ -43,9 +43,33 @@ class _StartPageState extends State<StartPage> {
         // Test if location services are enabled.
         locServiceEnabled = await Geolocator.isLocationServiceEnabled();
         if (!locServiceEnabled) {
-          // Location services are not enabled don't continue
-          // accessing the position and request users of the 
-          // App to enable the location services.
+          showDialog(
+              context: context,
+              builder: (BuildContext context) {
+                return AlertDialog(
+                  title: Text("Enable Location Services"),
+                  content: Text("Location services are disabled. Would you like to enable them?"),
+                  actions: <Widget>[
+                    TextButton(
+                      child: Text("Cancel"),
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                        Navigator.of(context).pop(); // Close the dialog
+                      },
+                    ),
+                    TextButton(
+                      child: Text("Enable"),
+                      onPressed: () async {
+                        // Navigate to location settings (to enable location services)
+                        await Geolocator.openLocationSettings();
+                        Navigator.of(context).pop();
+                        Navigator.of(context).pop(); // Close the dialog
+                      },
+                    ),
+                  ],
+                );
+              },
+            );
           return Future.error('Location services are disabled.');
         }
 
@@ -53,16 +77,47 @@ class _StartPageState extends State<StartPage> {
         if (permission == LocationPermission.denied) {
           permission = await Geolocator.requestPermission();
           if (permission == LocationPermission.denied) {
-            // Permissions are denied, next time you could try
-            // requesting permissions again (this is also where
-            // Android's shouldShowRequestPermissionRationale 
-            // returned true. According to Android guidelines
-            // your App should show an explanatory UI now.
+            showDialog(
+              context: context,
+              builder: (BuildContext context) {
+                return AlertDialog(
+                  title: Text("Location Permission Denied"),
+                  content: Text("We need location permissions to proceed. Please allow location permissions to continue."),
+                  actions: <Widget>[
+                    TextButton(
+                      child: Text("OK"),
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                        Navigator.pop(context); 
+                      },
+                    ),
+                  ],
+                );
+              },
+            );
             return Future.error('Location permissions are denied');
           }
         }
         
         if (permission == LocationPermission.deniedForever) {
+          showDialog(
+              context: context,
+              builder: (BuildContext context) {
+                return AlertDialog(
+                  title: Text("Location Permission Denied"),
+                  content: Text("We need location permissions to proceed. Please allow location permissions to continue."),
+                  actions: <Widget>[
+                    TextButton(
+                      child: Text("OK"),
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                        Navigator.pop(context); 
+                      },
+                    ),
+                  ],
+                );
+              },
+            );
           // Permissions are denied forever, handle appropriately. 
           return Future.error(
             'Location permissions are permanently denied, we cannot request permissions.');
@@ -112,7 +167,7 @@ class _StartPageState extends State<StartPage> {
         DateTime now = DateTime.now();
         String dateFormat=now.month.toString() +"-"+now.day.toString()+"-"+now.year.toString();
         String timestamp=now.hour.toString() +"-"+now.minute.toString()+"-"+now.second.toString()+"-"+now.millisecond.toString();
-        await _myBox.put("$dateFormat$timestamp",[widget.rid, widget.ad_id, points[i].latitude, points[i].longitude, timestamp,dateFormat]);
+        await _myBox.put("$dateFormat$timestamp",[widget.rid, widget.ad!.id, points[i].latitude, points[i].longitude, timestamp,dateFormat]);
         
       }
       setState(() {
@@ -125,7 +180,7 @@ class _StartPageState extends State<StartPage> {
       keys=[];
       for(int i=0; i<_myBox.length; i++){
         final _key=_myBox.getAt(i);
-        if(_key[0]==widget.rid && _key[1]==widget.ad_id ){
+        if(_key[0]==widget.rid && _key[1]==widget.ad!.id ){
           keys.add(_key);
         }
         
@@ -175,11 +230,8 @@ class _StartPageState extends State<StartPage> {
                             String timestamp=now.hour.toString() +"-"+now.minute.toString()+"-"+now.second.toString()+"-"+now.millisecond.toString();
                             //_myBox.add([widget.rid, widget.ad_id, lat, long, timestamp]);
                              //(String? ad_id, double lat, double long,String timestamp, String createdAt)
-                            await db.createAssignedAdDocOpDate(widget.ad_id, points[i].latitude, points[i].longitude,timestamp,dateFormat);
-                            
-                            
-                             
-                             //_myBox.delete("${keys[i][5]}${keys[i][4]}");
+                            await db.createAssignedAdDocOpDate(widget.ad!.id, points[i].latitude, points[i].longitude,timestamp,dateFormat);
+                            //_myBox.delete("${keys[i][5]}${keys[i][4]}");
                            }
                           
                           back();
@@ -283,7 +335,7 @@ class _StartPageState extends State<StartPage> {
        },
       child:(loading==true)?Loading(): Scaffold(
         appBar:  AppBar(
-          title: Text("${widget.ad_id}", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black87),),
+          title: Text("${widget.ad!.name}", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black87),),
           automaticallyImplyLeading: false,
           elevation: 1,
           shadowColor: Colors.black,

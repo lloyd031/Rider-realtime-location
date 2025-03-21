@@ -1,4 +1,5 @@
 class Ad_Model{
   final String? id;
-  Ad_Model(this.id);
+  String? name;
+  Ad_Model(this.id,this.name);
 }

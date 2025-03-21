@@ -7,6 +7,7 @@ class DatabaseService {
   //databse crud
   final _db=FirebaseFirestore.instance;
   final CollectionReference riderCollection=FirebaseFirestore.instance.collection("rider");
+  final CollectionReference adCollection=FirebaseFirestore.instance.collection("ad");
   final String? riderId;
   final String? adId;
   DatabaseService({required this.riderId, this.adId});
@@ -14,8 +15,10 @@ class DatabaseService {
 
   Future storeDetails(String fn, String ln,)async{
      return await riderCollection.doc(riderId).set({
+      'acc_type':'rider',
       'fn':fn,
-      'ln':ln
+      'ln':ln,
+      'ads':[]
      });
   }
   Future createAssignedAdDoc(String name, String ad_id)async{
@@ -43,7 +46,7 @@ class DatabaseService {
   {
     return snapshot.docs.map((doc){
       
-      return Ad_Model(doc.id);
+      return Ad_Model(doc.id,"");
     }).toList();
   }
 
@@ -59,7 +62,16 @@ class DatabaseService {
     }).toList();
   }
   
+   Stream<Ad_Model?> get adData
+  {
+      return adCollection.doc(adId).snapshots().map(_adDataFromSnapshot);  
+  }
+  //
+  Ad_Model? _adDataFromSnapshot(DocumentSnapshot snapshot)
+  {
     
+    return Ad_Model(adId,snapshot.get("name"));
+  } 
   
   
   
