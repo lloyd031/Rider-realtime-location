@@ -5,7 +5,11 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
     id("com.google.gms.google-services") apply true
 }
-
+dependencies {
+    // ...
+    implementation("com.google.android.material:material:1.13.0-alpha12")
+    // ...
+}
 android {
     namespace = "com.example.rider_realtime_location"
     compileSdk = 35

@@ -30,9 +30,6 @@ class AuthService {
           User? user=result.user;
           DatabaseService _db= DatabaseService(riderId: user!.uid);
           await _db.storeDetails("John", "Cruz");
-          await _db.createAssignedAdDoc("Ad_1","1");
-          await _db.createAssignedAdDoc("Ad_2","2");
-          await _db.createAssignedAdDoc("Ad_3","3");
           //create a document for the user with uid in firebase
           //await DatabaseService(user?.uid,user?.email,null).updateUserData(fn, ln, profile,accType);
           return _UserFromFirebase(user);

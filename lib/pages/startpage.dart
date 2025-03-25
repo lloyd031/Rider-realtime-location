@@ -137,6 +137,18 @@ class _StartPageState extends State<StartPage> {
                 long=value.longitude;
               });
         readData();
+        }else{
+          for(int i=0; i<widget.trailmark!.length; i++){
+                    setState(() {
+                        keyframe++;
+                        lat = widget.trailmark![keyframe].lat;
+                        long = widget.trailmark![keyframe].long;
+                        addPolyline();
+                       
+
+                    });
+            }
+                  _goToLocation();
         }
         super.initState();
       }
@@ -295,6 +307,7 @@ class _StartPageState extends State<StartPage> {
       color: Colors.deepOrange));
       });
     }
+    
   @override
   Widget build(BuildContext context) {
     
@@ -303,7 +316,7 @@ class _StartPageState extends State<StartPage> {
     void _liveLocation()async{
     late LocationSettings locationSettings= LocationSettings(
           accuracy: LocationAccuracy.high,
-          distanceFilter: 10,
+          distanceFilter: 50,
           
       );
     
@@ -341,8 +354,8 @@ class _StartPageState extends State<StartPage> {
           shadowColor: Colors.black,
           backgroundColor:Colors.white,
           actions: <Widget>[
+          if(widget.viewRide==false)
           TextButton(onPressed: ()async{
-                if(widget.viewRide==false){
                   if(runOnBackground==false){
                       
                       _goToLocation();
@@ -360,32 +373,12 @@ class _StartPageState extends State<StartPage> {
                       
                    }
                     
-                   
-          
-                }else{
-                  
-                  if(keyframe<=widget.trailmark!.length){
-                  Timer _animate;
-                  _animate= Timer.periodic(Duration(seconds: 1 ), (timer) {
-                    setState(() {
-                        keyframe++;
-                        lat = widget.trailmark![keyframe].lat;
-                        long = widget.trailmark![keyframe].long;
-                        addPolyline();
-                        _goToLocation();
-                        if(isTimerRun==false){
-                          isTimerRun=true;
-                          _starTimer();
-                        }
-
-                    });
-                  });
-                  }
-                }
+                 
                 
                 }, child: Text((runOnBackground==false)?"START":"STOP", style: TextStyle(color:(runOnBackground==false)?Colors.green[700]:Colors.red[700]),)),
           if(runOnBackground==false)
           TextButton(onPressed: ()async{
+            
                  Navigator.pop(context); 
           }, child: Text("BACK", style: TextStyle(color:Colors.red[700]),))
         ],
@@ -413,6 +406,7 @@ class _StartPageState extends State<StartPage> {
                 },
                 ),
             ),
+            
             /**
              * Container(
               height: 100,
@@ -443,7 +437,18 @@ class _StartPageState extends State<StartPage> {
               ),
               child:Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
+                    children:(widget.viewRide==true)?
+                    [
+                      Row(
+                        children: [
+                          Icon(Icons.map,color:Colors.green,),
+                          SizedBox(width: 8,),
+                          Text("Distance Traveled ", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),)
+                        ],
+                      ),
+                      Text("${(widget.trailmark!.length*50)/1000} Km", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color:Colors.black),)
+                    ]
+                    : [
                       Row(
                         children: [
                           Icon(Icons.timer_outlined,color:(runOnBackground==false)? Colors.red:Colors.green,),
