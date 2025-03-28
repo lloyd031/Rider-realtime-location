@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:rider_realtime_location/models/Ad.dart';
+import 'package:rider_realtime_location/models/Rider.dart';
 import 'package:rider_realtime_location/models/rides_model.dart';
 
 
@@ -10,30 +11,27 @@ class DatabaseService {
   final CollectionReference adCollection=FirebaseFirestore.instance.collection("ad");
   final String? riderId;
   final String? adId;
-  DatabaseService({required this.riderId, this.adId});
+  final String? year;
+  final String? month;
+  final String? day;
+  DatabaseService({required this.riderId, this.adId, this.year, this.month, this.day});
  
 
-  Future storeDetails(String fn, String ln,)async{
+  Future storeDetails(String fn, String ln, String email)async{
      return await riderCollection.doc(riderId).set({
-      'acc_type':'rider',
       'fn':fn,
       'ln':ln,
+      'email':email,
       'ads':[]
      });
   }
-  Future createAssignedAdDoc(String name, String ad_id)async{
-     return await riderCollection.doc(riderId).collection("assigned_ads").doc(ad_id).set({
-      'name':name,
-      'status':'inc'
-     });
-  }
-  Future createAssignedAdDocOpDate(String? ad_id, double lat, double long,String timestamp, String createdAt)async{
+ 
+  
+  Future createAssignedAdDocOpDate(String? adId, double lat, double long,String? timestamp, String? yyyy, String? mm, String? dd)async{
     
-     return await riderCollection.doc(riderId).collection("assigned_ads").doc(ad_id).collection("rides").doc().set({
+     return await riderCollection.doc(riderId).collection("assigned_ads").doc(adId).collection("year").doc(yyyy).collection("month").doc(mm).collection("day").doc(dd).collection("rides").doc().set({
       'lat':lat,
       'long':long,
-      'ad_id':ad_id,
-      'created_at':createdAt,
       'timestamp':timestamp
      });
   }
@@ -53,12 +51,12 @@ class DatabaseService {
   //get rides stream
   
   Stream<List<RidesModel>> get getRides{
-    return riderCollection.doc(riderId).collection("assigned_ads").doc(adId).collection("rides").orderBy("timestamp").snapshots().map(_ridesFromSnapShot);
+    return riderCollection.doc(riderId).collection("assigned_ads").doc(adId).collection("year").doc(year).collection("month").doc(month).collection("day").doc(day).collection("rides").orderBy("timestamp").snapshots().map(_ridesFromSnapShot);
   }
   List<RidesModel> _ridesFromSnapShot(QuerySnapshot snapshot)
   {
     return snapshot.docs.map((doc){
-      return RidesModel(doc.id,doc.get("lat"),doc.get('long'),doc.get('timestamp'),doc.get('created_at'));
+      return RidesModel(doc.id,doc.get("lat"),doc.get('long'),doc.get('timestamp'));
     }).toList();
   }
   
@@ -73,8 +71,45 @@ class DatabaseService {
     return Ad_Model(adId,snapshot.get("name"));
   } 
   
-  
-  
+  Stream<RiderObj?> get riderDetails
+  {
+      return riderCollection.doc(riderId).snapshots().map(_riderDataFromSnapshot);  
+  }
+  //
+  RiderObj? _riderDataFromSnapshot(DocumentSnapshot snapshot)
+  {
+    
+    return RiderObj(riderId,snapshot.get("email"),snapshot.get("fn"),snapshot.get("ln"));
+  } 
+  Stream<List<String>> get getYears{
+    return riderCollection.doc(riderId).collection("assigned_ads").doc(adId).collection("year").snapshots().map(_yearsFromSnapShot);
+  }
+  List<String> _yearsFromSnapShot(QuerySnapshot snapshot)
+  {
+    return snapshot.docs.map((doc){
+      return doc.id;
+    }).toList();
+  }
+  Stream<List<String>> get getMonths{
+    return riderCollection.doc(riderId).collection("assigned_ads").doc(adId).collection("year").doc(year).collection("month").snapshots().map(_monthsFromSnapShot);
+  }
+  List<String> _monthsFromSnapShot(QuerySnapshot snapshot)
+  {
+    return snapshot.docs.map((doc){
+      return doc.id;
+    }).toList();
+  }
+  Stream<List<String>> get getDays{
+    return riderCollection.doc(riderId).collection("assigned_ads").doc(adId).collection("year").doc(year).collection("month").doc(month).collection("day").snapshots().map(_daysFromSnapShot);
+  }
+  List<String> _daysFromSnapShot(QuerySnapshot snapshot)
+  {
+    return snapshot.docs.map((doc){
+      return doc.id;
+    }).toList();
+  }
+
+   
   
   }
   

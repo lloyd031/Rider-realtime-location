@@ -19,21 +19,11 @@ class Ad_List extends StatefulWidget {
 class _Ad_ListState extends State<Ad_List> {
   
  
-  String? selectedAdId="";
   
   @override
   Widget build(BuildContext context) {
     final ads = Provider.of<List<Ad_Model>?>(context);
-     void selectAd(Ad_Model ad){
-      if(widget.viewRide==false){
-                        Navigator.push(context, MaterialPageRoute(builder: (context)=>StartPage(widget.rid,ad,widget.viewRide,null)));
-                      }else{
-                        setState(() {
-                          
-                          selectedAdId=ad.id;
-                        });
-                      }
-     }
+     
      return  Column(
       crossAxisAlignment: CrossAxisAlignment.start,
        children: [
@@ -54,12 +44,8 @@ class _Ad_ListState extends State<Ad_List> {
                     StreamProvider<Ad_Model?>.value(
                     value: DatabaseService(riderId:widget.rid,adId: ads[i].id).adData, 
                     initialData: Ad_Model("", ""),
-                    child:AdDetail(rid: widget.rid, viewRide: widget.viewRide,selectAd: selectAd,) ,),
-                    if(widget.viewRide==true && selectedAdId==ads[i].id)
-                    StreamProvider<List<RidesModel>>.value(
-                    value: DatabaseService(riderId:widget.rid,adId: ads[i].id).getRides, 
-                    initialData: List.empty(),
-                    child:Locations(rid: widget.rid,ad: ads[i],) ,)
+                    child:AdDetail(rid: widget.rid, viewRide: widget.viewRide,) ,),
+                    
                   ],
                 ),
                 
@@ -83,8 +69,7 @@ class _Ad_ListState extends State<Ad_List> {
 class AdDetail extends StatelessWidget {
   final String? rid;
   final bool? viewRide;
-  final Function? selectAd;
-  const AdDetail({super.key, required this.rid, required this.viewRide, required this.selectAd});
+  const AdDetail({super.key, required this.rid, required this.viewRide});
 
   @override
   Widget build(BuildContext context) {
@@ -93,11 +78,7 @@ class AdDetail extends StatelessWidget {
                       children: [
                         InkWell(
                           onTap: (){
-                            if(viewRide==false){
-                              Navigator.push(context, MaterialPageRoute(builder: (context)=>StartPage(rid,adData,viewRide,null)));
-                            }else{
-                              selectAd!(adData);
-                            }
+                            Navigator.push(context, MaterialPageRoute(builder: (context)=>StartPage(rid,adData,viewRide)));
                           },
                           child:  Text("${adData.name}",overflow: TextOverflow.ellipsis, style: GoogleFonts.roboto(fontSize: 18, color: Colors.black,)),
                         ),

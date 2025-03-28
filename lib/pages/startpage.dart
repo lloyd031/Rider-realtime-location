@@ -5,32 +5,36 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 import 'package:http/http.dart' as http;
+import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 import 'package:rider_realtime_location/models/Ad.dart';
 import 'package:rider_realtime_location/models/rides_model.dart';
+import 'package:rider_realtime_location/pages/components/dateAndYearDropdown.dart';
 import 'package:rider_realtime_location/pages/loading.dart';
 import 'package:rider_realtime_location/services/database_service.dart';
 import 'package:rider_realtime_location/main.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:table_calendar/table_calendar.dart';
 
 class StartPage extends StatefulWidget {
   final String? rid;
   final Ad_Model? ad;
   final bool? viewRide;
-  final List<RidesModel>? trailmark;
-  StartPage(this.rid,this.ad,this.viewRide, this.trailmark);
+  StartPage(this.rid,this.ad,this.viewRide);
   
   @override
   State<StartPage> createState() => _StartPageState();
 }
 
 class _StartPageState extends State<StartPage> {
-        int keyframe=-1; // used to view riders trialmark history
+        // used to view riders trialmark history
         bool isTimerRun=false; // used to make sure that timer only start once
         Set<Polyline> _poly={};
         List<LatLng> points=[];
         bool loading=false;
         List<dynamic> keys=[];
+        List<RidesModel>? trailmark=[];
         //start - all about geolocator and google map
         bool runOnBackground=false;
         late double lat;
@@ -38,6 +42,7 @@ class _StartPageState extends State<StartPage> {
         Future<Position> _determinePosition() async {
         bool locServiceEnabled;
         LocationPermission permission;
+        
 
         
         // Test if location services are enabled.
@@ -138,21 +143,21 @@ class _StartPageState extends State<StartPage> {
               });
         readData();
         }else{
-          for(int i=0; i<widget.trailmark!.length; i++){
-                    setState(() {
-                        keyframe++;
-                        lat = widget.trailmark![keyframe].lat;
-                        long = widget.trailmark![keyframe].long;
-                        addPolyline();
-                       
-
-                    });
-            }
-                  _goToLocation();
+          lat=9.3068;
+          long=123.3054;
         }
         super.initState();
       }
-   
+      
+      String year='';
+      String month='';
+      setMonthYear(String mm, String yy){
+        setState(() {
+          year=yy;
+          month=mm;
+        });
+        print(mm+" "+yy);
+      }
     
 
     final Completer<GoogleMapController> _controller =
@@ -166,7 +171,8 @@ class _StartPageState extends State<StartPage> {
        GoogleMapController controller = await _controller.future;
       await controller.animateCamera(CameraUpdate.newCameraPosition(CameraPosition(
         target: LatLng(lat, long),
-        zoom: 16)));
+        zoom: 15,
+        tilt: 50,)));
       
     }
     //start - all about geolocator and google map
@@ -177,9 +183,11 @@ class _StartPageState extends State<StartPage> {
     Future writeData() async{
       for(int i=0; i<points.length; i++){
         DateTime now = DateTime.now();
-        String dateFormat=now.month.toString() +"-"+now.day.toString()+"-"+now.year.toString();
+        String yyyy=now.year.toString();
+        String mm=now.month.toString();
+        String dd=now.day.toString();
         String timestamp=now.hour.toString() +"-"+now.minute.toString()+"-"+now.second.toString()+"-"+now.millisecond.toString();
-        await _myBox.put("$dateFormat$timestamp",[widget.rid, widget.ad!.id, points[i].latitude, points[i].longitude, timestamp,dateFormat]);
+        await _myBox.put("$yyyy$mm$dd$timestamp",[widget.rid, widget.ad!.id, points[i].latitude, points[i].longitude, timestamp,yyyy,mm,dd]);
         
       }
       setState(() {
@@ -199,34 +207,8 @@ class _StartPageState extends State<StartPage> {
       }
     }
     
-    //timer
-    int _seconds = 00;
-    int _mins = 00;
-    int _hours = 00; // The timer count
-  late Timer _timer; // Timer object
-  void _starTimer() {
-    _timer = Timer.periodic(Duration(seconds: 1 ), (timer) {
-      setState(() {
-        if(_seconds==59){
-          _seconds=0;
-          if(_mins==59){
-            _mins=0;
-            _hours++;
-          }else{
-            _mins++;
-          }
-        }else{
-          _seconds++;
-        }
-      });
-    });
-    
-  }
-  String _twoDigitFormat(int number) {
-    return number.toString().padLeft(2, '0');
-  }
+   
 
-  //sync  to firebase if connected to internet
     void SyncData(DatabaseService db)async{
       try {
                         final response = await http.get(Uri.parse('https://www.google.com'));
@@ -238,12 +220,13 @@ class _StartPageState extends State<StartPage> {
                           for(int i=0; i<points.length; i++)
                           {
                             DateTime now = DateTime.now();
-                            String dateFormat=now.month.toString() +"-"+now.day.toString()+"-"+now.year.toString();
-                            String timestamp=now.hour.toString() +"-"+now.minute.toString()+"-"+now.second.toString()+"-"+now.millisecond.toString();
-                            //_myBox.add([widget.rid, widget.ad_id, lat, long, timestamp]);
-                             //(String? ad_id, double lat, double long,String timestamp, String createdAt)
-                            await db.createAssignedAdDocOpDate(widget.ad!.id, points[i].latitude, points[i].longitude,timestamp,dateFormat);
-                            //_myBox.delete("${keys[i][5]}${keys[i][4]}");
+                            String yyyy=now.year.toString();
+                            String mm=DateFormat('MMMM').format(now);
+                            String dd=now.day.toString();
+                            String timestamp="${now.hour}-${now.minute}-${now.second}-${now.millisecond}";
+                            //await db.setYear("${widget.ad!.id}",yyyy);
+                            await db.createAssignedAdDocOpDate(widget.ad!.id, points[i].latitude, points[i].longitude,timestamp,yyyy,mm,dd);
+                           
                            }
                           
                           back();
@@ -270,7 +253,6 @@ class _StartPageState extends State<StartPage> {
           });
       Navigator.pop(context);
     }
-  //show dialog if no internet
         void _showDialog(DatabaseService db){
           showDialog(context: context, builder: 
           (context){
@@ -307,12 +289,25 @@ class _StartPageState extends State<StartPage> {
       color: Colors.deepOrange));
       });
     }
-    
+  void viewTrail(List<RidesModel>? trail){
+    setState(() {
+      trailmark=trail;
+    });
+    for(int i=0; i<trailmark!.length; i++){
+        setState(() {
+          lat = trailmark![i].lat;
+          long = trailmark![i].long;
+          addPolyline();
+          });
+          }
+          _goToLocation();
+                                        
+  }
   @override
   Widget build(BuildContext context) {
+    DateTime currDate = DateTime.now();
     
-    final _db=DatabaseService(riderId: widget.rid);
-    //start still related to geolocator and google map
+    final _db=DatabaseService(riderId: widget.rid, );
     void _liveLocation()async{
     late LocationSettings locationSettings= LocationSettings(
           accuracy: LocationAccuracy.high,
@@ -330,25 +325,22 @@ class _StartPageState extends State<StartPage> {
                addPolyline();
               if(isTimerRun==false){
                 isTimerRun=true;
-                _starTimer();
               }
-              //_db.createAssignedAdDocOpDate("${widget.ad_id}", position!.latitude, position.longitude);
-              
-              //writeData(lat, long,timestamp);
               _goToLocation();
             }
             
         });
      }
-    //end still related to geolocator and google map.
+    
      
+    
     return WillPopScope(
       onWillPop: ()async{ 
         return false;
        },
       child:(loading==true)?Loading(): Scaffold(
         appBar:  AppBar(
-          title: Text("${widget.ad!.name}", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black87),),
+          title: Text((widget.ad!.name=="")?"FAST Ads":"${widget.ad!.name}", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black87),),
           automaticallyImplyLeading: false,
           elevation: 1,
           shadowColor: Colors.black,
@@ -356,23 +348,24 @@ class _StartPageState extends State<StartPage> {
           actions: <Widget>[
           if(widget.viewRide==false)
           TextButton(onPressed: ()async{
-                  if(runOnBackground==false){
-                      
-                      _goToLocation();
-                      _liveLocation();
-                      await initializeService();
-                      setState(() {
-                        runOnBackground=true;
-                      });
-                      
-                      
-                      
-                   }else{
-                        
-                      SyncData(_db);
-                      
-                   }
-                    
+                    if(widget.viewRide==false){
+                        if(runOnBackground==false){
+                            
+                            _goToLocation();
+                            _liveLocation();
+                            await initializeService();
+                            setState(() {
+                              runOnBackground=true;
+                            });
+                            
+                            
+                            
+                        }else{
+                              
+                            SyncData(_db);
+                            
+                        }
+                    }
                  
                 
                 }, child: Text((runOnBackground==false)?"START":"STOP", style: TextStyle(color:(runOnBackground==false)?Colors.green[700]:Colors.red[700]),)),
@@ -406,21 +399,50 @@ class _StartPageState extends State<StartPage> {
                 },
                 ),
             ),
-            
-            /**
-             * Container(
-              height: 100,
-              child: SingleChildScrollView(
-                scrollDirection: Axis.vertical,
-                child: Column(
-                  children: [
-                    for(int i=0; i<keys.length; i++)
-                    Text("${keys[i][1]} - ${keys[i][2]} - ${keys[i][3]}")
-                  ],
+            if(widget.viewRide==true)
+            Container(
+              decoration: BoxDecoration(
+              color: Colors.white,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.3), // Shadow color
+                  offset: Offset(0, -5), // Top shadow by shifting the shadow upward
+                  blurRadius: 10, // How blurred the shadow is
+                  spreadRadius: 2, // How much the shadow spreads
                 ),
+              ],
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(8), // Top-left border radius
+                topRight: Radius.circular(8), // Top-right border radius
               ),
             ),
-             */
+            
+              child:Padding(
+                padding: const EdgeInsets.all(10.0),
+                child: Column(
+                  mainAxisSize: MainAxisSize.max,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        MonthAndYear(adId: widget.ad!.id,rId: widget.rid, setMonthYear: setMonthYear,),
+                        //Text("${DateFormat('MMMM').format(currDate)} ${currDate.year}" ,style: TextStyle(fontSize: 20,),),
+                        Icon(Icons.more_horiz, color:Colors.red[500],)
+                      ],
+                    ),
+                  SizedBox(height: 16,),
+                  if(year!="" && month!="")
+                    StreamProvider<List<String>>.value(
+                    value: DatabaseService(riderId:widget.rid,adId: widget.ad!.id,year:year, month: month).getDays,
+                    initialData: List.empty(),
+                    child:MyDays(viewTrail: viewTrail,adId: widget.ad!.id,mm: month,rid:widget.rid,yy: year,) ,),
+                  if(year=="" && month=="")
+                  MyDays(viewTrail: null,adId: widget.ad!.id,mm: month,rid:widget.rid,yy: year,)
+                  ],
+                ),
+              )
+            ),
+           
             Container(
               padding: EdgeInsets.all(8),
               height: 45, // Adjust the height as needed
@@ -446,7 +468,7 @@ class _StartPageState extends State<StartPage> {
                           Text("Distance Traveled ", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),)
                         ],
                       ),
-                      Text("${(widget.trailmark!.length*50)/1000} Km", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color:Colors.black),)
+                      Text("${(trailmark!.isEmpty)?0:((trailmark!.length-1)*50)/1000} Km", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color:Colors.black),)
                     ]
                     : [
                       Row(
@@ -456,7 +478,7 @@ class _StartPageState extends State<StartPage> {
                           Text("Location change", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),)
                         ],
                       ),
-                      Text("${_twoDigitFormat(_hours)}:${_twoDigitFormat(_mins)}:${_twoDigitFormat(_seconds)}", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color:(runOnBackground==false)? Colors.black54:Colors.black),)
+                      Text((points.length==0)?"0.0 Km":"${((points.length-1)*50)/1000} Km", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color:(runOnBackground==false)? Colors.black54:Colors.black),)
                     ],
                 ),
             ),

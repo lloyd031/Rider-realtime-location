@@ -11,8 +11,7 @@ class AuthService {
   //create rider model
   RiderObj? _UserFromFirebase(User? user)
   {
-    
-    return user!=null?RiderObj(user.uid):null;
+    return (user!=null)?RiderObj(user.uid,'','',''):null;
   }
   //listen to authentication changes
   Stream<RiderObj?> get rider{
@@ -21,7 +20,7 @@ class AuthService {
   //authentication
   
   //signup with email and password
-   Future signUp(String email, String pw) async
+   Future signUp(String email, String pw,String fn, String ln) async
    {
       // ignore: unrelated_type_equality_checks
       
@@ -29,7 +28,7 @@ class AuthService {
           UserCredential result = await _auth.createUserWithEmailAndPassword(email: email, password: pw);
           User? user=result.user;
           DatabaseService _db= DatabaseService(riderId: user!.uid);
-          await _db.storeDetails("John", "Cruz");
+          await _db.storeDetails(fn, ln,email);
           //create a document for the user with uid in firebase
           //await DatabaseService(user?.uid,user?.email,null).updateUserData(fn, ln, profile,accType);
           return _UserFromFirebase(user);

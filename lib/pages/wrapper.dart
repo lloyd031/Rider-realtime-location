@@ -1,16 +1,11 @@
 
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:provider/provider.dart';
 import 'package:rider_realtime_location/models/rider.dart';
 import 'package:rider_realtime_location/pages/auth/auth_wapper.dart';
-import 'package:rider_realtime_location/pages/auth/signup.dart';
 import 'package:rider_realtime_location/pages/home.dart';
-import 'package:rider_realtime_location/pages/loading.dart';
-import 'package:rider_realtime_location/services/database_service.dart';
-import 'package:rider_realtime_location/pages/auth/login.dart';
 
 class Wrapper extends StatefulWidget {
   

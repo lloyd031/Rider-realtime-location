@@ -42,9 +42,11 @@ class _ArchiveState extends State<Archive> {
                           for(int i=0; i<keys.length; i++)
                           {
                             //_myBox.add([widget.rid, widget.ad_id, lat, long, timestamp]);
-                             await db.createAssignedAdDocOpDate(keys[i][1], keys[i][2], keys[i][3],keys[i][4],keys[i][5]);
+                            //String? ad_id, double lat, double long,String timestamp, String yyyy, String mm, String dd
+                             await db.createAssignedAdDocOpDate(keys[i][1], keys[i][2], keys[i][3],keys[i][4],keys[i][5]
+                             ,keys[i][6],keys[i][7]);
                              print(keys[i]);
-                             _myBox.delete("${keys[i][5]}${keys[i][4]}");
+                             _myBox.delete("${keys[i][5]}${keys[i][6]}${keys[i][7]}${keys[i][4]}");
                              
                           }
                           setState(() {
