@@ -26,7 +26,24 @@ class DatabaseService {
      });
   }
  
-  
+  Future createDocYear(String? adId, String? yyyy)async{
+    
+     return await riderCollection.doc(riderId).collection("assigned_ads").doc(adId).collection("year").doc(yyyy).set({
+      'n':'yr'
+     });
+  }
+  Future createDocMonth(String? adId, String? yyyy, String? mm)async{
+    
+     return await riderCollection.doc(riderId).collection("assigned_ads").doc(adId).collection("year").doc(yyyy).collection("month").doc(mm).set({
+      'n':'mnth'
+     });
+  }
+  Future createDocDay(String? adId, String? yyyy, String? mm, String dd)async{
+    
+     return await riderCollection.doc(riderId).collection("assigned_ads").doc(adId).collection("year").doc(yyyy).collection("month").doc(mm).collection("day").doc(dd).set({
+      'n':'day'
+     });
+  }
   Future createAssignedAdDocOpDate(String? adId, double lat, double long,String? timestamp, String? yyyy, String? mm, String? dd)async{
     
      return await riderCollection.doc(riderId).collection("assigned_ads").doc(adId).collection("year").doc(yyyy).collection("month").doc(mm).collection("day").doc(dd).collection("rides").doc().set({
@@ -48,9 +65,10 @@ class DatabaseService {
     }).toList();
   }
 
-  //get rides stream
-  
-  Stream<List<RidesModel>> get getRides{
+  // ignore: slash_for_doc_comments
+  /**
+   * Ride Stream
+   * Stream<List<RidesModel>> get getRides{
     return riderCollection.doc(riderId).collection("assigned_ads").doc(adId).collection("year").doc(year).collection("month").doc(month).collection("day").doc(day).collection("rides").orderBy("timestamp").snapshots().map(_ridesFromSnapShot);
   }
   List<RidesModel> _ridesFromSnapShot(QuerySnapshot snapshot)
@@ -59,6 +77,9 @@ class DatabaseService {
       return RidesModel(doc.id,doc.get("lat"),doc.get('long'),doc.get('timestamp'));
     }).toList();
   }
+   */
+  
+  
   
    Stream<Ad_Model?> get adData
   {
@@ -108,8 +129,17 @@ class DatabaseService {
       return doc.id;
     }).toList();
   }
+  
+  Future<List<RidesModel>> getDocuments(String? adId, String? yyyy, String? mm, String dd) async {
+    QuerySnapshot querySnapshot = await riderCollection.doc(riderId).collection("assigned_ads").doc(adId).collection("year").doc(yyyy).collection("month").doc(mm).collection("day").doc(dd).collection("rides").orderBy("timestamp").get();
+    return querySnapshot.docs.map((ride){
+      //this.id, this.lat, this.long, this.timestamp
+      return RidesModel("", ride.get("lat"), ride.get("long"), ride.get("timestamp"));
+    }).toList();
+  }
 
    
-  
   }
+  
+  
   

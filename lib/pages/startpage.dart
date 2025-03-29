@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
@@ -207,7 +208,6 @@ class _StartPageState extends State<StartPage> {
       }
     }
     
-   
 
     void SyncData(DatabaseService db)async{
       try {
@@ -216,14 +216,29 @@ class _StartPageState extends State<StartPage> {
                           setState(() {
                             loading=true;
                           });
-                          
+                          DateTime now = DateTime.now();
+                          String yyyy=now.year.toString();
+                          String mm=DateFormat('MMMM').format(now);
+                          String dd=now.day.toString();
+                          var documentRefYear = FirebaseFirestore.instance.collection('rider').doc(widget.rid).collection("assigned_ads").doc(widget.ad!.id).collection("year").doc(yyyy);
+                          DocumentSnapshot documentSnapshot = await documentRefYear.get();
+                          if(!documentSnapshot.exists){
+                            await db.createDocYear(widget.ad!.id, yyyy);
+                          }
+                          var documentRefMonth=documentRefYear.collection("month").doc(mm);
+                          documentSnapshot = await documentRefMonth.get();
+                          if(!documentSnapshot.exists){
+                            await db.createDocMonth(widget.ad!.id, yyyy,mm);
+                          }
+                          var documentRefDay=documentRefMonth.collection("day").doc(dd);
+                          documentSnapshot = await documentRefDay.get();
+                          if(!documentSnapshot.exists){
+                            await db.createDocDay(widget.ad!.id, yyyy,mm,dd);
+                          }
                           for(int i=0; i<points.length; i++)
                           {
-                            DateTime now = DateTime.now();
-                            String yyyy=now.year.toString();
-                            String mm=DateFormat('MMMM').format(now);
-                            String dd=now.day.toString();
-                            String timestamp="${now.hour}-${now.minute}-${now.second}-${now.millisecond}";
+                            DateTime time= DateTime.now();
+                            String timestamp="${time.hour}-${time.minute}-${time.second}-${time.millisecond}";
                             //await db.setYear("${widget.ad!.id}",yyyy);
                             await db.createAssignedAdDocOpDate(widget.ad!.id, points[i].latitude, points[i].longitude,timestamp,yyyy,mm,dd);
                            
@@ -289,20 +304,23 @@ class _StartPageState extends State<StartPage> {
       color: Colors.deepOrange));
       });
     }
-  void viewTrail(List<RidesModel>? trail){
+  void viewTrail(List<RidesModel> trail){
     setState(() {
       trailmark=trail;
     });
-    for(int i=0; i<trailmark!.length; i++){
+    for(RidesModel ride in trail){
         setState(() {
-          lat = trailmark![i].lat;
-          long = trailmark![i].long;
+          lat = ride.lat;
+          long = ride.long;
           addPolyline();
           });
           }
           _goToLocation();
                                         
   }
+  
+
+
   @override
   Widget build(BuildContext context) {
     DateTime currDate = DateTime.now();
@@ -311,7 +329,7 @@ class _StartPageState extends State<StartPage> {
     void _liveLocation()async{
     late LocationSettings locationSettings= LocationSettings(
           accuracy: LocationAccuracy.high,
-          distanceFilter: 50,
+          distanceFilter: 100,
           
       );
     
@@ -468,7 +486,7 @@ class _StartPageState extends State<StartPage> {
                           Text("Distance Traveled ", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),)
                         ],
                       ),
-                      Text("${(trailmark!.isEmpty)?0:((trailmark!.length-1)*50)/1000} Km", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color:Colors.black),)
+                      Text("${(trailmark!.isEmpty)?0:((trailmark!.length-1)*100)/1000} Km", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color:Colors.black),)
                     ]
                     : [
                       Row(
@@ -478,7 +496,7 @@ class _StartPageState extends State<StartPage> {
                           Text("Location change", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),)
                         ],
                       ),
-                      Text((points.length==0)?"0.0 Km":"${((points.length-1)*50)/1000} Km", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color:(runOnBackground==false)? Colors.black54:Colors.black),)
+                      Text((points.length==0)?"0.0 Km":"${((points.length-1)*100)/1000} Km", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color:(runOnBackground==false)? Colors.black54:Colors.black),)
                     ],
                 ),
             ),

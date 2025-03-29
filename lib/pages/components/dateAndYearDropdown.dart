@@ -147,7 +147,7 @@ class MyDays extends StatefulWidget {
   final String? adId;
   final String? yy;
   final String? mm;
-  const MyDays({super.key, required this.viewTrail, required this.adId, required this.mm, required this.rid, required this.yy});
+  const MyDays({super.key,required this.viewTrail, required this.adId, required this.mm, required this.rid, required this.yy});
 
   @override
   State<MyDays> createState() => _MyDaysState();
@@ -163,7 +163,6 @@ class _MyDaysState extends State<MyDays> {
         setState(() {
         selectedDay=i;
       });
-      print("dddddddd");
                                      
       }
     }
@@ -180,10 +179,12 @@ class _MyDaysState extends State<MyDays> {
                           if((7*i+j)<=35 && (7*i+j)>0 )
                             InkWell(
                               onTap: ()async{
-                                if(days!=null && days.contains("${(7*i+j)}")){
+                                if(days!=null && days.contains("${(7*i+j)}") && selectedDay!=(7*i+j)){
                                   selectDay(7*i+j);
-
-                                   
+                                  final _db=DatabaseService(riderId: widget.rid, );
+                                  //String? adId, String? yyyy, String? mm, String dd
+                                  List<RidesModel> rides=await  _db.getDocuments(widget.adId,widget.yy,widget.mm,"${(7*i+j)}");
+                                  widget.viewTrail!(rides);
                                 }
                                 
                               },
