@@ -6,6 +6,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 import 'package:http/http.dart' as http;
+import 'package:intl/date_symbols.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:rider_realtime_location/models/Ad.dart';
@@ -16,7 +17,6 @@ import 'package:rider_realtime_location/services/database_service.dart';
 import 'package:rider_realtime_location/main.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:table_calendar/table_calendar.dart';
 
 class StartPage extends StatefulWidget {
   final String? rid;
@@ -40,6 +40,9 @@ class _StartPageState extends State<StartPage> {
         bool runOnBackground=false;
         late double lat;
         late double long;
+        String currDate="";
+        int selectedDay=0;
+        bool isConn=true;
         Future<Position> _determinePosition() async {
         bool locServiceEnabled;
         LocationPermission permission;
@@ -137,6 +140,7 @@ class _StartPageState extends State<StartPage> {
       
       @override
       void initState() {
+        //keys=[];
         if(widget.viewRide==false){
           _determinePosition().then((value){
                 lat=value.latitude;
@@ -156,8 +160,14 @@ class _StartPageState extends State<StartPage> {
         setState(() {
           year=yy;
           month=mm;
+          selectedDay=0;
         });
         print(mm+" "+yy);
+      }
+      void selectDay(int day){
+        setState(() {
+        selectedDay=day;
+        });
       }
     
 
@@ -182,18 +192,18 @@ class _StartPageState extends State<StartPage> {
     final _myBox=Hive.box('riderBox');
     //write
     Future writeData() async{
-      for(int i=0; i<points.length; i++){
         DateTime now = DateTime.now();
         String yyyy=now.year.toString();
-        String mm=now.month.toString();
+        String mm=DateFormat('MMMM').format(now);
         String dd=now.day.toString();
         String timestamp=now.hour.toString() +"-"+now.minute.toString()+"-"+now.second.toString()+"-"+now.millisecond.toString();
-        await _myBox.put("$yyyy$mm$dd$timestamp",[widget.rid, widget.ad!.id, points[i].latitude, points[i].longitude, timestamp,yyyy,mm,dd]);
         
-      }
-      setState(() {
-        readData();
-      });
+        await _myBox.put("$yyyy$mm$dd$timestamp",[widget.rid, widget.ad!.id, lat, long, timestamp,yyyy,mm,dd]);
+        SyncData("$yyyy$mm$dd$timestamp",true);
+       
+                          
+      
+      
     }
     
     //read
@@ -209,56 +219,45 @@ class _StartPageState extends State<StartPage> {
     }
     
 
-    void SyncData(DatabaseService db)async{
+    SyncData(String k, bool a)async{
+      final db=DatabaseService(riderId: widget.rid, );
+      print("SDfdsfdsfdsf");
       try {
+                        
                         final response = await http.get(Uri.parse('https://www.google.com'));
                         if (response.statusCode == 200) {
-                          setState(() {
-                            loading=true;
-                          });
-                          DateTime now = DateTime.now();
-                          String yyyy=now.year.toString();
-                          String mm=DateFormat('MMMM').format(now);
-                          String dd=now.day.toString();
-                          var documentRefYear = FirebaseFirestore.instance.collection('rider').doc(widget.rid).collection("assigned_ads").doc(widget.ad!.id).collection("year").doc(yyyy);
+                          
+                          
+                          final key=_myBox.get(k);
+                          if(currDate!="${key[5]}${key[6]}${key[7]}"){
+                            var documentRefYear = FirebaseFirestore.instance.collection('rider').doc(widget.rid).collection("assigned_ads").doc(widget.ad!.id).collection("year").doc(key[5]);
                           DocumentSnapshot documentSnapshot = await documentRefYear.get();
                           if(!documentSnapshot.exists){
-                            await db.createDocYear(widget.ad!.id, yyyy);
+                            await db.createDocYear(widget.ad!.id, key[5]);
                           }
-                          var documentRefMonth=documentRefYear.collection("month").doc(mm);
+                          var documentRefMonth=documentRefYear.collection("month").doc(key[6]);
                           documentSnapshot = await documentRefMonth.get();
                           if(!documentSnapshot.exists){
-                            await db.createDocMonth(widget.ad!.id, yyyy,mm);
+                            await db.createDocMonth(widget.ad!.id, key[5],key[6]);
                           }
-                          var documentRefDay=documentRefMonth.collection("day").doc(dd);
+                          var documentRefDay=documentRefMonth.collection("day").doc(key[7]);
                           documentSnapshot = await documentRefDay.get();
                           if(!documentSnapshot.exists){
-                            await db.createDocDay(widget.ad!.id, yyyy,mm,dd);
+                            await db.createDocDay(widget.ad!.id,key[5],key[6],key[7]);
                           }
-                          for(int i=0; i<points.length; i++)
-                          {
-                            DateTime time= DateTime.now();
-                            String timestamp="${time.hour}-${time.minute}-${time.second}-${time.millisecond}";
-                            //await db.setYear("${widget.ad!.id}",yyyy);
-                            await db.createAssignedAdDocOpDate(widget.ad!.id, points[i].latitude, points[i].longitude,timestamp,yyyy,mm,dd);
-                           
-                           }
-                          
-                          back();
-                        } else {
-                          
                           setState(() {
-                            runOnBackground=true;
-                            loading=false;
-                             _showDialog(db);
+                            currDate="${key[5]}${key[6]}${key[7]}";
                           });
+                          }
+                            await db.createAssignedAdDocOpDate(key[1], key[2], key[3],key[4],key[5]
+                          ,key[6],key[7]);
+                          keys.add(key);
+                          isConn=true;
+                        } else {
+                          isConn=false;
                         }
                       } on SocketException catch (_) {
-                        setState(() {
-                          runOnBackground=true;
-                          loading=false;
-                           _showDialog(db);
-                        });
+                          isConn=false;
                       }
     }
     void back(){
@@ -268,7 +267,7 @@ class _StartPageState extends State<StartPage> {
           });
       Navigator.pop(context);
     }
-        void _showDialog(DatabaseService db){
+        void _showDialog(){
           showDialog(context: context, builder: 
           (context){
             return CupertinoAlertDialog(
@@ -280,17 +279,11 @@ class _StartPageState extends State<StartPage> {
                     loading=true;
                   });
                   
-                  await writeData();
                   Navigator.pop(context);
                   back();
                 },
                 child:Text("OKAY",style: TextStyle(color: Colors.blue),),),
-                MaterialButton(onPressed: (){
-                  Navigator.pop(context);
-                  SyncData(db);
-                },
-                child:Text("TRY AGAIN",style: TextStyle(color: Colors.green)),)
-              ],
+               ],
             );
           });
         }
@@ -303,9 +296,14 @@ class _StartPageState extends State<StartPage> {
       width: 8,
       color: Colors.deepOrange));
       });
+      if(widget.viewRide==false){
+        writeData();
+      }
+      
     }
   void viewTrail(List<RidesModel> trail){
     setState(() {
+       points.clear();
       trailmark=trail;
     });
     for(RidesModel ride in trail){
@@ -323,9 +321,8 @@ class _StartPageState extends State<StartPage> {
 
   @override
   Widget build(BuildContext context) {
-    DateTime currDate = DateTime.now();
     
-    final _db=DatabaseService(riderId: widget.rid, );
+    
     void _liveLocation()async{
     late LocationSettings locationSettings= LocationSettings(
           accuracy: LocationAccuracy.high,
@@ -379,10 +376,36 @@ class _StartPageState extends State<StartPage> {
                             
                             
                         }else{
-                              
-                            SyncData(_db);
                             
-                        }
+                            setState(() {
+                              loading=true;
+                            });
+                             for(int i=0; i<keys.length;i++){
+                                _myBox.delete("${keys[i][5]}${keys[i][6]}${keys[i][7]}${keys[i][4]}");
+                            }
+                             for(int i=0; i<_myBox.length; i++){
+                              final _key=_myBox.getAt(i);
+                              if(_key[0]==widget.rid){
+                                
+                                await SyncData("${_key[5]}${_key[6]}${_key[7]}${_key[4]}",false);
+                                }
+                            }
+                            for(int i=0; i<keys.length;i++){
+                                _myBox.delete("${keys[i][5]}${keys[i][6]}${keys[i][7]}${keys[i][4]}");
+                            }
+
+                            if(isConn==false){
+                            setState(() {
+                            //runOnBackground=true;
+                            loading=false;
+                             _showDialog();
+                              });
+                          
+                            }else{
+                              keys=[];
+                              back();
+                            }
+                         }
                     }
                  
                 
@@ -400,7 +423,7 @@ class _StartPageState extends State<StartPage> {
           mainAxisSize: MainAxisSize.max,
           mainAxisAlignment: MainAxisAlignment.start,
           children: [
-            
+            Text("${keys.length}"),
             Expanded(
               flex: 1,
               child: GoogleMap(
@@ -453,9 +476,9 @@ class _StartPageState extends State<StartPage> {
                     StreamProvider<List<String>>.value(
                     value: DatabaseService(riderId:widget.rid,adId: widget.ad!.id,year:year, month: month).getDays,
                     initialData: List.empty(),
-                    child:MyDays(viewTrail: viewTrail,adId: widget.ad!.id,mm: month,rid:widget.rid,yy: year,) ,),
+                    child:MyDays(selectDay: selectDay, viewTrail: viewTrail,adId: widget.ad!.id,mm: month,rid:widget.rid,yy: year, dd: selectedDay,) ,),
                   if(year=="" && month=="")
-                  MyDays(viewTrail: null,adId: widget.ad!.id,mm: month,rid:widget.rid,yy: year,)
+                  MyDays(selectDay: selectDay, viewTrail: null,adId: widget.ad!.id,mm: month,rid:widget.rid,yy: year,dd: selectedDay,)
                   ],
                 ),
               )

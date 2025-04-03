@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
@@ -18,6 +19,8 @@ final _myBox=Hive.box('riderBox');
 List<dynamic> keys=[];
 List<dynamic> keysAll=[];
 bool loading=false;
+String currDate="";
+
 class _ArchiveState extends State<Archive> {
   void readData(){
       keys=[];
@@ -41,14 +44,35 @@ class _ArchiveState extends State<Archive> {
                           });
                           for(int i=0; i<keys.length; i++)
                           {
-                            //_myBox.add([widget.rid, widget.ad_id, lat, long, timestamp]);
-                            //String? ad_id, double lat, double long,String timestamp, String yyyy, String mm, String dd
+                             if(currDate!="${keys[i][5]}${keys[i][6]}${keys[i][7]}"){
+                              
+                                var documentRefYear = FirebaseFirestore.instance.collection('rider').doc(widget.rid).collection("assigned_ads").doc(keys[i][1]).collection("year").doc(keys[i][5]);
+                                DocumentSnapshot documentSnapshot = await documentRefYear.get();
+                                if(!documentSnapshot.exists){
+                                  await db.createDocYear(keys[i][1],keys[i][5]);
+                                }
+                                var documentRefMonth=documentRefYear.collection("month").doc(keys[i][6]);
+                                documentSnapshot = await documentRefMonth.get();
+                                if(!documentSnapshot.exists){
+                                  await db.createDocMonth(keys[i][1], keys[i][5],keys[i][6]);
+                                }
+                                var documentRefDay=documentRefMonth.collection("day").doc(keys[i][7]);
+                                documentSnapshot = await documentRefDay.get();
+                                if(!documentSnapshot.exists){
+                                  await db.createDocDay(keys[i][1], keys[i][5],keys[i][6],keys[i][7]);
+                                }
+                                setState(() {
+                                  currDate="${keys[i][5]}${keys[i][6]}${keys[i][7]}";
+                                });
+                                
+                             }
                              await db.createAssignedAdDocOpDate(keys[i][1], keys[i][2], keys[i][3],keys[i][4],keys[i][5]
                              ,keys[i][6],keys[i][7]);
                              print(keys[i]);
                              _myBox.delete("${keys[i][5]}${keys[i][6]}${keys[i][7]}${keys[i][4]}");
                              
                           }
+                          print(currDate);
                           setState(() {
                             readData();
                             loading=false;

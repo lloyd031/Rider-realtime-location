@@ -143,29 +143,23 @@ class _MyMonthsState extends State<MyMonths> {
 
 class MyDays extends StatefulWidget {
   final Function? viewTrail;
+  final Function? selectDay;
   final String? rid;
   final String? adId;
   final String? yy;
   final String? mm;
-  const MyDays({super.key,required this.viewTrail, required this.adId, required this.mm, required this.rid, required this.yy});
+  final int? dd;
+  const MyDays({super.key, required this.selectDay, required this.viewTrail, required this.adId, required this.mm, required this.rid, required this.yy, required this.dd});
 
   @override
   State<MyDays> createState() => _MyDaysState();
 }
 
 class _MyDaysState extends State<MyDays> {
-  int selectedDay=0;
   @override
   Widget build(BuildContext context) {
     final days = Provider.of<List<String>?>(context);
-    void selectDay(int i)async{
-      if(i<=31){
-        setState(() {
-        selectedDay=i;
-      });
-                                     
-      }
-    }
+    
     return Column(
       children: [
         for(int i=0;i<7; i++)
@@ -179,8 +173,13 @@ class _MyDaysState extends State<MyDays> {
                           if((7*i+j)<=35 && (7*i+j)>0 )
                             InkWell(
                               onTap: ()async{
-                                if(days!=null && days.contains("${(7*i+j)}") && selectedDay!=(7*i+j)){
-                                  selectDay(7*i+j);
+                                if(days!=null && days.contains("${(7*i+j)}") && widget.dd!=(7*i+j)){
+                                  if(i<=31){
+                                    setState(() {
+                                    widget.selectDay!(7*i+j);
+                                  });
+                                                                
+                                  }
                                   final _db=DatabaseService(riderId: widget.rid, );
                                   //String? adId, String? yyyy, String? mm, String dd
                                   List<RidesModel> rides=await  _db.getDocuments(widget.adId,widget.yy,widget.mm,"${(7*i+j)}");
@@ -190,12 +189,12 @@ class _MyDaysState extends State<MyDays> {
                               },
                               child: Container(
                                 decoration: BoxDecoration(
-                                    color: ((7*i+j)<=31)?(selectedDay==7*i+j)?Colors.red[500]:Colors.white:Colors.white,
+                                    color: ((7*i+j)<=31)?(widget.dd==7*i+j)?Colors.red[500]:Colors.white:Colors.white,
                                     borderRadius: BorderRadius.circular(15),  // Set border radius here
                                   ),
                                 width: 30,
                                 height: 30,
-                                child: Center(child: Text("${7*i+j}", style: TextStyle(fontWeight: FontWeight.bold, color: ((7*i+j)<=31)?(selectedDay==7*i+j)?Colors.white:(days!=null && days.contains("${7*i+j}"))?Colors.black:Colors.grey:Colors.white),))),
+                                child: Center(child: Text("${7*i+j}", style: TextStyle(fontWeight: FontWeight.bold, color: ((7*i+j)<=31)?(widget.dd==7*i+j)?Colors.white:(days!=null && days.contains("${7*i+j}"))?Colors.black:Colors.grey:Colors.white),))),
                             )
                           
                         ],
