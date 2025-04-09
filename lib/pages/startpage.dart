@@ -43,6 +43,7 @@ class _StartPageState extends State<StartPage> {
         String currDate="";
         int selectedDay=0;
         bool isConn=true;
+        int datalength=0;
         Future<Position> _determinePosition() async {
         bool locServiceEnabled;
         LocationPermission permission;
@@ -191,15 +192,11 @@ class _StartPageState extends State<StartPage> {
     //offline db
     final _myBox=Hive.box('riderBox');
     //write
-    Future writeData() async{
-        DateTime now = DateTime.now();
-        String yyyy=now.year.toString();
-        String mm=DateFormat('MMMM').format(now);
-        String dd=now.day.toString();
-        String timestamp=now.hour.toString() +"-"+now.minute.toString()+"-"+now.second.toString()+"-"+now.millisecond.toString();
+    Future writeData(String yyyy,String mm,String dd,String timestamp) async{
         
-        await _myBox.put("$yyyy$mm$dd$timestamp",[widget.rid, widget.ad!.id, lat, long, timestamp,yyyy,mm,dd]);
-        SyncData("$yyyy$mm$dd$timestamp",true);
+        
+         _myBox.put("$yyyy$mm$dd$timestamp",[widget.rid, widget.ad!.id, lat, long, timestamp,yyyy,mm,dd,false]);
+        SyncData("$yyyy$mm$dd$timestamp");
        
                           
       
@@ -219,7 +216,7 @@ class _StartPageState extends State<StartPage> {
     }
     
 
-    SyncData(String k, bool a)async{
+    SyncData(String k)async{
       final db=DatabaseService(riderId: widget.rid, );
       print("SDfdsfdsfdsf");
       try {
@@ -251,7 +248,10 @@ class _StartPageState extends State<StartPage> {
                           }
                             await db.createAssignedAdDocOpDate(key[1], key[2], key[3],key[4],key[5]
                           ,key[6],key[7]);
-                          keys.add(key);
+                          setState(() {
+                            key[8]=true;
+                            keys.add(key);
+                          });
                           isConn=true;
                         } else {
                           isConn=false;
@@ -261,6 +261,7 @@ class _StartPageState extends State<StartPage> {
                       }
     }
     void back(){
+      keys=[];
       stopBackgroundService();
       setState(() {
           runOnBackground=false;
@@ -287,7 +288,7 @@ class _StartPageState extends State<StartPage> {
             );
           });
         }
-  void addPolyline(){
+  void addPolyline()async{
       setState(() {
         points.add(LatLng(lat, long));
       _poly.clear();
@@ -297,7 +298,12 @@ class _StartPageState extends State<StartPage> {
       color: Colors.deepOrange));
       });
       if(widget.viewRide==false){
-        writeData();
+        DateTime now = DateTime.now();
+        String yyyy=now.year.toString();
+        String mm=DateFormat('MMMM').format(now);
+        String dd=now.day.toString();
+        String timestamp="${now.hour}-${now.minute}-${now.second}-${now.millisecond}-${now.microsecond}";
+        writeData(yyyy,mm,dd,timestamp);
       }
       
     }
@@ -353,7 +359,19 @@ class _StartPageState extends State<StartPage> {
       onWillPop: ()async{ 
         return false;
        },
-      child:(loading==true)?Loading(): Scaffold(
+      child:(loading==true)?Scaffold(
+        body: Container(
+          height: double.maxFinite,
+          color: Colors.white,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Loading(),
+              Text("${keys.length/datalength*100}%")
+            ],
+          ),
+        ),
+      ): Scaffold(
         appBar:  AppBar(
           title: Text((widget.ad!.name=="")?"FAST Ads":"${widget.ad!.name}", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black87),),
           automaticallyImplyLeading: false,
@@ -379,6 +397,7 @@ class _StartPageState extends State<StartPage> {
                             
                             setState(() {
                               loading=true;
+                              datalength=_myBox.length;
                             });
                              for(int i=0; i<keys.length;i++){
                                 _myBox.delete("${keys[i][5]}${keys[i][6]}${keys[i][7]}${keys[i][4]}");
@@ -387,7 +406,7 @@ class _StartPageState extends State<StartPage> {
                               final _key=_myBox.getAt(i);
                               if(_key[0]==widget.rid){
                                 
-                                await SyncData("${_key[5]}${_key[6]}${_key[7]}${_key[4]}",false);
+                                await SyncData("${_key[5]}${_key[6]}${_key[7]}${_key[4]}");
                                 }
                             }
                             for(int i=0; i<keys.length;i++){
@@ -402,7 +421,7 @@ class _StartPageState extends State<StartPage> {
                               });
                           
                             }else{
-                              keys=[];
+                              
                               back();
                             }
                          }
@@ -423,7 +442,6 @@ class _StartPageState extends State<StartPage> {
           mainAxisSize: MainAxisSize.max,
           mainAxisAlignment: MainAxisAlignment.start,
           children: [
-            Text("${keys.length}"),
             Expanded(
               flex: 1,
               child: GoogleMap(

@@ -15,19 +15,47 @@ class Archive extends StatefulWidget {
   @override
   State<Archive> createState() => _ArchiveState();
 }
+
+
+class _ArchiveState extends State<Archive> {
 final _myBox=Hive.box('riderBox');
 List<dynamic> keys=[];
+List<dynamic> keysFromLocal=[];
 List<dynamic> keysAll=[];
 bool loading=false;
 String currDate="";
+bool isConn=false;
 
-class _ArchiveState extends State<Archive> {
+void uploadData()async{
+        setState(() {
+          loading=true;
+        });
+          
+          for(int i=0; i<keys.length;i++){
+            await SyncData(keys[i]);  
+          }
+        for(int i=0; i<keysFromLocal.length;i++){
+            _myBox.delete("${keys[i][5]}${keys[i][6]}${keys[i][7]}${keys[i][4]}");
+        }
+         readData();
+        
+        setState(() {
+        //runOnBackground=true;
+        loading=false;
+        });
+        if(isConn==false){
+          _showDialog();
+         }
+      
+        
+                         
+  }
   void readData(){
       keys=[];
       keysAll=[];
       for(int i=0; i<_myBox.length; i++){
         final _key=_myBox.getAt(i);
-        if(_key[0]==widget.rid){
+        if(_key[0]==widget.rid && _key[8]==false){
           keys.add(_key);
         }
         keysAll.add(_key);
@@ -35,63 +63,49 @@ class _ArchiveState extends State<Archive> {
       }
     }
     //sync  to firebase if connected to internet
-    void SyncData(DatabaseService db)async{
+    SyncData(dynamic key)async{
+      final db=DatabaseService(riderId: widget.rid, );
+      print("SDfdsfdsfdsf");
       try {
+                        
                         final response = await http.get(Uri.parse('https://www.google.com'));
                         if (response.statusCode == 200) {
-                          setState(() {
-                            loading=true;
-                          });
-                          for(int i=0; i<keys.length; i++)
-                          {
-                             if(currDate!="${keys[i][5]}${keys[i][6]}${keys[i][7]}"){
-                              
-                                var documentRefYear = FirebaseFirestore.instance.collection('rider').doc(widget.rid).collection("assigned_ads").doc(keys[i][1]).collection("year").doc(keys[i][5]);
-                                DocumentSnapshot documentSnapshot = await documentRefYear.get();
-                                if(!documentSnapshot.exists){
-                                  await db.createDocYear(keys[i][1],keys[i][5]);
-                                }
-                                var documentRefMonth=documentRefYear.collection("month").doc(keys[i][6]);
-                                documentSnapshot = await documentRefMonth.get();
-                                if(!documentSnapshot.exists){
-                                  await db.createDocMonth(keys[i][1], keys[i][5],keys[i][6]);
-                                }
-                                var documentRefDay=documentRefMonth.collection("day").doc(keys[i][7]);
-                                documentSnapshot = await documentRefDay.get();
-                                if(!documentSnapshot.exists){
-                                  await db.createDocDay(keys[i][1], keys[i][5],keys[i][6],keys[i][7]);
-                                }
-                                setState(() {
-                                  currDate="${keys[i][5]}${keys[i][6]}${keys[i][7]}";
-                                });
-                                
-                             }
-                             await db.createAssignedAdDocOpDate(keys[i][1], keys[i][2], keys[i][3],keys[i][4],keys[i][5]
-                             ,keys[i][6],keys[i][7]);
-                             print(keys[i]);
-                             _myBox.delete("${keys[i][5]}${keys[i][6]}${keys[i][7]}${keys[i][4]}");
-                             
+                          
+                          
+                          if(currDate!="${key[5]}${key[6]}${key[7]}"){
+                            var documentRefYear = FirebaseFirestore.instance.collection('rider').doc(widget.rid).collection("assigned_ads").doc(key[1]).collection("year").doc(key[5]);
+                          DocumentSnapshot documentSnapshot = await documentRefYear.get();
+                          if(!documentSnapshot.exists){
+                            await db.createDocYear(key, key[5]);
                           }
-                          print(currDate);
+                          var documentRefMonth=documentRefYear.collection("month").doc(key[6]);
+                          documentSnapshot = await documentRefMonth.get();
+                          if(!documentSnapshot.exists){
+                            await db.createDocMonth(key[1], key[5],key[6]);
+                          }
+                          var documentRefDay=documentRefMonth.collection("day").doc(key[7]);
+                          documentSnapshot = await documentRefDay.get();
+                          if(!documentSnapshot.exists){
+                            await db.createDocDay(key[1],key[5],key[6],key[7]);
+                          }
                           setState(() {
-                            readData();
-                            loading=false;
+                            currDate="${key[5]}${key[6]}${key[7]}";
                           });
+                          }
+                            await db.createAssignedAdDocOpDate(key[1], key[2], key[3],key[4],key[5]
+                          ,key[6],key[7]);
+                          keysFromLocal.add(key);
+                          key[8]=true;
+                          isConn=true;
                         } else {
-                          setState(() {
-                            loading=false;
-                             _showDialog(db);
-                          });
+                          isConn=false;
                         }
                       } on SocketException catch (_) {
-                        setState(() {
-                          loading=false;
-                           _showDialog(db);
-                        });
+                          isConn=false;
                       }
     }
   //show dialog if no internet
-        void _showDialog(DatabaseService db){
+        void _showDialog(){
           showDialog(context: context, builder: 
           (context){
             return CupertinoAlertDialog(
@@ -104,7 +118,7 @@ class _ArchiveState extends State<Archive> {
                 child:Text("OKAY",style: TextStyle(color: Colors.blue),),),
                 MaterialButton(onPressed: (){
                   Navigator.pop(context);
-                  SyncData(db);
+                  uploadData();
                 },
                 child:Text("TRY AGAIN",style: TextStyle(color: Colors.green)),)
               ],
@@ -133,7 +147,7 @@ class _ArchiveState extends State<Archive> {
           height: 20,
         ),
         TextButton(onPressed: ()async{
-          SyncData(_db);
+          uploadData();
          }, child: Text("Sync")),
          SizedBox(
           height: 20,

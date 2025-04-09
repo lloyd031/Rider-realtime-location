@@ -1,6 +1,7 @@
-
 import 'dart:async';
 import 'dart:ui';
+import 'package:flutter/rendering.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:hive_flutter/adapters.dart';
 import 'package:provider/provider.dart';
@@ -12,29 +13,47 @@ import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:rider_realtime_location/pages/wrapper.dart';
 import 'package:firebase_core/firebase_core.dart';
 
-void main()async{
-  //WidgetsFlutterBinding.ensureInitialized();
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
   await Hive.initFlutter();
-  var box = await Hive.openBox('riderBox');
+  var box= await Hive.openBox('riderBox');
+  await initializeNotifications();  
   runApp(const MyApp());
+}
+
+Future<void> initializeNotifications() async {
+  final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
+  
+  // Android-specific implementation
+  final AndroidFlutterLocalNotificationsPlugin? androidSpecific =
+      flutterLocalNotificationsPlugin.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
+
+  if (androidSpecific != null) {
+    bool? permissionGranted = await androidSpecific.requestNotificationsPermission();
+    if (permissionGranted != null && permissionGranted != true) {
+      print('Notification permission granted');
+    } else {
+      print('Notification permission denied');
+    }
+  }
 }
  
 void startBackgroundService() {
+  
   final service = FlutterBackgroundService();
   service.startService();
-  
 }
 
 void stopBackgroundService() {
   final service = FlutterBackgroundService();
   service.invoke("stop");
-  
 }
+
 Future<void> initializeService() async {
-  final service = FlutterBackgroundService();
   
+  final service = FlutterBackgroundService();
+
   await service.configure(
     iosConfiguration: IosConfiguration(
       autoStart: true,
@@ -49,66 +68,88 @@ Future<void> initializeService() async {
     ),
   );
 }
+
 @pragma('vm:entry-point')
 Future<bool> onIosBackground(ServiceInstance service) async {
   WidgetsFlutterBinding.ensureInitialized();
   DartPluginRegistrant.ensureInitialized();
-
   return true;
 }
+late FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin;
 @pragma('vm:entry-point')
 void onStart(ServiceInstance service) async {
   final socket = io.io("your-server-url", <String, dynamic>{
     'transports': ['websocket'],
     'autoConnect': true,
   });
+  
   socket.onConnect((_) {
     print('Connected. Socket ID: ${socket.id}');
-    // Implement your socket logic here
-    // For example, you can listen for events or send data
   });
 
   socket.onDisconnect((_) {
     print('Disconnected');
   });
-   socket.on("event-name", (data) {
-    //do something here like pushing a notification
+
+  socket.on("event-name", (data) {
+    // Do something here like pushing a notification
   });
+
   service.on("stop").listen((event) {
     service.stopSelf();
-    print("background process is now stopped");
+    flutterLocalNotificationsPlugin.cancelAll();
+    print("Background process is now stopped");
   });
 
-  service.on("start").listen((event) {});
+  service.on("start").listen((event) {
+    // Handle start event if needed
+  });
+   DartPluginRegistrant.ensureInitialized();
 
+       flutterLocalNotificationsPlugin =
+      FlutterLocalNotificationsPlugin();
+  // bring to foreground
   Timer.periodic(const Duration(seconds: 1), (timer) async {
-    socket.emit("event-name", "your-message");
-    print("service is successfully running ${DateTime.now().second}");
-    final LocationSettings locationSettings = LocationSettings(
-      accuracy: LocationAccuracy.high,
-      distanceFilter: 1,
-    );
-
-    Position position = await Geolocator.getCurrentPosition(locationSettings: locationSettings);
-    
-    print(position.latitude.toString() + " "+position.longitude.toString());
-    
+     
+    if (service is AndroidServiceInstance) {
+      if (await service.isForegroundService()) {
+        flutterLocalNotificationsPlugin.show(
+          888,
+          'FAST Ads',
+          'Background running',
+          NotificationDetails(
+            android: AndroidNotificationDetails(
+              'Fast Ads',
+              'FAST ADS FOREGROUND SERVICE',
+              icon: 'ic_bg_service_small',
+              ongoing: true,
+              importance: Importance.low,
+              priority: Priority.low,
+              silent: true,
+              vibrationPattern: null,
+              enableVibration: false,
+              
+            ),
+          ),
+        );
+      }
+    }
   });
+  
 }
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return StreamProvider.value(
       value: AuthService().rider,
-      initialData:null,
+      initialData: null,
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
         title: 'Flutter Demo',
-        home:  Wrapper(),
+        home: Wrapper(),
       ),
     );
   }
