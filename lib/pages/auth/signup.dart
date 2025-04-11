@@ -31,7 +31,18 @@ class _SignUpState extends State<SignUp> {
   
   @override
   Widget build(BuildContext context) {
-    return(loading==true)?Loading(): Scaffold(
+    return(loading==true)?Scaffold(
+        body: Container(
+          height: double.maxFinite,
+          color: Colors.white,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Loading(),
+            ],
+          ),
+        ),
+      ): Scaffold(
       appBar: AppBar(
         title: Text('Sign Up'),
       ),

@@ -31,7 +31,18 @@ class _HomeState extends State<Home> {
   @override
   Widget build(BuildContext context) {
     bool loading=false;
-    return(loading==true)?Loading(): Scaffold(
+    return(loading==true)?Scaffold(
+        body: Container(
+          height: double.maxFinite,
+          color: Colors.white,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Loading(),
+            ],
+          ),
+        ),
+      ): Scaffold(
       backgroundColor: Colors.white,
       appBar:  AppBar(
         leading: Builder( builder: (BuildContext context) { return IconButton(

@@ -30,7 +30,6 @@ class StartPage extends StatefulWidget {
 
 class _StartPageState extends State<StartPage> {
         // used to view riders trialmark history
-        bool isTimerRun=false; // used to make sure that timer only start once
         Set<Polyline> _poly={};
         List<LatLng> points=[];
         bool loading=false;
@@ -192,15 +191,16 @@ class _StartPageState extends State<StartPage> {
     //offline db
     final _myBox=Hive.box('riderBox');
     //write
-    Future writeData(String yyyy,String mm,String dd,String timestamp) async{
-        
-        
-         _myBox.put("$yyyy$mm$dd$timestamp",[widget.rid, widget.ad!.id, lat, long, timestamp,yyyy,mm,dd,false]);
-        SyncData("$yyyy$mm$dd$timestamp");
-       
-                          
-      
-      
+    writeData(){
+        DateTime now = DateTime.now();
+        String yyyy=now.year.toString();
+        String mm=DateFormat('MMMM').format(now);
+        String dd=now.day.toString();
+        String timestamp = "${DateTime.now().millisecondsSinceEpoch}";
+        _myBox.put("$yyyy$mm$dd$timestamp",[widget.rid, widget.ad!.id, lat, long, timestamp,yyyy,mm,dd,false]);
+        Future(()async{
+          await syncData("$yyyy$mm$dd$timestamp");
+        });
     }
     
     //read
@@ -216,7 +216,7 @@ class _StartPageState extends State<StartPage> {
     }
     
 
-    SyncData(String k)async{
+   syncData(String k)async{
       final db=DatabaseService(riderId: widget.rid, );
       print("SDfdsfdsfdsf");
       try {
@@ -242,16 +242,14 @@ class _StartPageState extends State<StartPage> {
                           if(!documentSnapshot.exists){
                             await db.createDocDay(widget.ad!.id,key[5],key[6],key[7]);
                           }
-                          setState(() {
                             currDate="${key[5]}${key[6]}${key[7]}";
-                          });
+                          
                           }
                             await db.createAssignedAdDocOpDate(key[1], key[2], key[3],key[4],key[5]
                           ,key[6],key[7]);
-                          setState(() {
                             key[8]=true;
                             keys.add(key);
-                          });
+                        
                           isConn=true;
                         } else {
                           isConn=false;
@@ -288,23 +286,17 @@ class _StartPageState extends State<StartPage> {
             );
           });
         }
-  void addPolyline()async{
-      setState(() {
+  void addPolyline(){
         points.add(LatLng(lat, long));
       _poly.clear();
       _poly.add(Polyline(polylineId: PolylineId("id"),
       points: points,
       width: 8,
       color: Colors.deepOrange));
-      });
+      
       if(widget.viewRide==false){
-        DateTime now = DateTime.now();
-        String yyyy=now.year.toString();
-        String mm=DateFormat('MMMM').format(now);
-        String dd=now.day.toString();
-        String timestamp="${now.hour}-${now.minute}-${now.second}-${now.millisecond}-${now.microsecond}";
-        writeData(yyyy,mm,dd,timestamp);
-      }
+        writeData();
+        }
       
     }
   void viewTrail(List<RidesModel> trail){
@@ -323,10 +315,11 @@ class _StartPageState extends State<StartPage> {
                                         
   }
   
-
+  
 
   @override
   Widget build(BuildContext context) {
+    
     
     
     void _liveLocation()async{
@@ -343,16 +336,15 @@ class _StartPageState extends State<StartPage> {
               long=position.longitude;
              });
             if(runOnBackground==true){
-               addPolyline();
-              if(isTimerRun==false){
-                isTimerRun=true;
-              }
+               Future((){
+                 addPolyline();
+               });
+              
               _goToLocation();
             }
             
         });
      }
-    
      
     
     return WillPopScope(
@@ -406,7 +398,7 @@ class _StartPageState extends State<StartPage> {
                               final _key=_myBox.getAt(i);
                               if(_key[0]==widget.rid){
                                 
-                                await SyncData("${_key[5]}${_key[6]}${_key[7]}${_key[4]}");
+                                await syncData("${_key[5]}${_key[6]}${_key[7]}${_key[4]}");
                                 }
                             }
                             for(int i=0; i<keys.length;i++){

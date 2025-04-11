@@ -24,7 +24,7 @@ List<dynamic> keysFromLocal=[];
 List<dynamic> keysAll=[];
 bool loading=false;
 String currDate="";
-bool isConn=false;
+bool isConn=true;
 
 void uploadData()async{
         setState(() {
@@ -32,7 +32,10 @@ void uploadData()async{
         });
           
           for(int i=0; i<keys.length;i++){
-            await SyncData(keys[i]);  
+            await SyncData(keys[i]);
+            if(isConn==false){
+                i=keys.length;
+              }
           }
         for(int i=0; i<keysFromLocal.length;i++){
             _myBox.delete("${keys[i][5]}${keys[i][6]}${keys[i][7]}${keys[i][4]}");
@@ -44,8 +47,8 @@ void uploadData()async{
         loading=false;
         });
         if(isConn==false){
-          _showDialog();
-         }
+                _showDialog();
+        }
       
         
                          
@@ -65,7 +68,6 @@ void uploadData()async{
     //sync  to firebase if connected to internet
     SyncData(dynamic key)async{
       final db=DatabaseService(riderId: widget.rid, );
-      print("SDfdsfdsfdsf");
       try {
                         
                         final response = await http.get(Uri.parse('https://www.google.com'));
@@ -160,9 +162,9 @@ void uploadData()async{
         Text("ignore this part"),
         TextButton(onPressed: ()async{
             _myBox.clear();
-          setState(() {
+          
            readData();
-          });
+           setState(() {});
          }, child: Text("Clear data")),
       ],
     );
