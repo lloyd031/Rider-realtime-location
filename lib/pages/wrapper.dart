@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:hive/hive.dart';
 import 'package:provider/provider.dart';
 import 'package:rider_realtime_location/models/rider.dart';
 import 'package:rider_realtime_location/pages/auth/auth_wapper.dart';

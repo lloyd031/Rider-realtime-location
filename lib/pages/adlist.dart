@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:rider_realtime_location/main.dart';
 import 'package:rider_realtime_location/models/Ad.dart';
 import 'package:rider_realtime_location/models/rides_model.dart';
-import 'package:rider_realtime_location/pages/locations.dart';
 import 'package:rider_realtime_location/pages/startpage.dart';
+import 'package:rider_realtime_location/pages/startride.dart';
 import 'package:rider_realtime_location/services/database_service.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -18,7 +19,12 @@ class Ad_List extends StatefulWidget {
 
 class _Ad_ListState extends State<Ad_List> {
   
- 
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    stopBackgroundService();
+  }
   
   @override
   Widget build(BuildContext context) {
@@ -70,15 +76,16 @@ class AdDetail extends StatelessWidget {
   final String? rid;
   final bool? viewRide;
   const AdDetail({super.key, required this.rid, required this.viewRide});
-
+  
   @override
   Widget build(BuildContext context) {
+    
     final adData = Provider.of<Ad_Model>(context);
     return Column(
                       children: [
                         InkWell(
                           onTap: (){
-                            Navigator.push(context, MaterialPageRoute(builder: (context)=>StartPage(rid,adData,viewRide)));
+                            Navigator.push(context, MaterialPageRoute(builder: (context)=>(viewRide==false)?StartRide(rid,adData,false):StartPage(rid, adData)));
                           },
                           child:  Text("${adData.name}",overflow: TextOverflow.ellipsis, style: GoogleFonts.roboto(fontSize: 18, color: Colors.black,)),
                         ),

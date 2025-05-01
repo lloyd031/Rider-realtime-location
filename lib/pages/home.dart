@@ -1,6 +1,7 @@
 import 'dart:ffi';
 
 import 'package:flutter/material.dart';
+import 'package:hive/hive.dart';
 import 'package:provider/provider.dart';
 import 'package:rider_realtime_location/models/Ad.dart';
 import 'package:rider_realtime_location/models/Rider.dart';
@@ -8,6 +9,7 @@ import 'package:rider_realtime_location/pages/adlist.dart';
 import 'package:rider_realtime_location/pages/archive.dart';
 import 'package:rider_realtime_location/pages/components/mydrawer.dart';
 import 'package:rider_realtime_location/pages/loading.dart';
+import 'package:rider_realtime_location/pages/startride.dart';
 import 'package:rider_realtime_location/services/auth.dart';
 import 'package:rider_realtime_location/services/database_service.dart';
 
@@ -27,22 +29,18 @@ class _HomeState extends State<Home> {
       screenView=screenNumber;
     });
   }
-  
+   @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    
+  }
   @override
   Widget build(BuildContext context) {
-    bool loading=false;
-    return(loading==true)?Scaffold(
-        body: Container(
-          height: double.maxFinite,
-          color: Colors.white,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Loading(),
-            ],
-          ),
-        ),
-      ): Scaffold(
+   
+     var  _myStateBox =  Hive.box('stateBox');
+     dynamic key=_myStateBox.get('state');
+     return (_myStateBox.isNotEmpty)?StartRide(key[0], Ad_Model(key[1][0],key[1][1]),true): Scaffold(
       backgroundColor: Colors.white,
       appBar:  AppBar(
         leading: Builder( builder: (BuildContext context) { return IconButton(

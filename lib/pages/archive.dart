@@ -20,7 +20,7 @@ class Archive extends StatefulWidget {
 class _ArchiveState extends State<Archive> {
 final _myBox=Hive.box('riderBox');
 List<dynamic> keys=[];
-List<dynamic> keysFromLocal=[];
+List<dynamic> keysUploaded=[];
 List<dynamic> keysAll=[];
 bool loading=false;
 String currDate="";
@@ -37,7 +37,7 @@ void uploadData()async{
                 i=keys.length;
               }
           }
-        for(int i=0; i<keysFromLocal.length;i++){
+        for(int i=0; i<keysUploaded.length;i++){
             _myBox.delete("${keys[i][5]}${keys[i][6]}${keys[i][7]}${keys[i][4]}");
         }
          readData();
@@ -96,7 +96,9 @@ void uploadData()async{
                           }
                             await db.createAssignedAdDocOpDate(key[1], key[2], key[3],key[4],key[5]
                           ,key[6],key[7]);
-                          keysFromLocal.add(key);
+                          setState(() {
+                            keysUploaded.add(key);
+                          });
                           key[8]=true;
                           isConn=true;
                         } else {
@@ -137,7 +139,13 @@ void uploadData()async{
   Widget build(BuildContext context) {
     final _db=DatabaseService(riderId: widget.rid);
     
-    return (loading==true)?Loading():Column(
+    return (loading==true)?Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Loading(),
+              Text("${(keysUploaded.length/keys.length).toStringAsFixed(2)}%")
+            ],
+          ):Column(
       children: [
         Text("Trailmarks saved sa local db. this happen if dili ma sync sa app ang trailmarks due to internet error"),
         SizedBox(

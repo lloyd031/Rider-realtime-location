@@ -1,13 +1,5 @@
 import 'dart:async';
-import 'dart:io';
-
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:hive/hive.dart';
-import 'package:http/http.dart' as http;
-import 'package:intl/date_symbols.dart';
-import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:rider_realtime_location/models/Ad.dart';
 import 'package:rider_realtime_location/models/rides_model.dart';
@@ -21,8 +13,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 class StartPage extends StatefulWidget {
   final String? rid;
   final Ad_Model? ad;
-  final bool? viewRide;
-  StartPage(this.rid,this.ad,this.viewRide);
+  StartPage(this.rid,this.ad);
   
   @override
   State<StartPage> createState() => _StartPageState();
@@ -34,6 +25,8 @@ class _StartPageState extends State<StartPage> {
         List<LatLng> points=[];
         bool loading=false;
         List<dynamic> keys=[];
+        List<dynamic> keysToUpload=[];
+        List<dynamic> keysUploaded=[];
         List<RidesModel>? trailmark=[];
         //start - all about geolocator and google map
         bool runOnBackground=false;
@@ -42,115 +35,14 @@ class _StartPageState extends State<StartPage> {
         String currDate="";
         int selectedDay=0;
         bool isConn=true;
-        int datalength=0;
-        Future<Position> _determinePosition() async {
-        bool locServiceEnabled;
-        LocationPermission permission;
-        
-
-        
-        // Test if location services are enabled.
-        locServiceEnabled = await Geolocator.isLocationServiceEnabled();
-        if (!locServiceEnabled) {
-          showDialog(
-              context: context,
-              builder: (BuildContext context) {
-                return AlertDialog(
-                  title: Text("Enable Location Services"),
-                  content: Text("Location services are disabled. Would you like to enable them?"),
-                  actions: <Widget>[
-                    TextButton(
-                      child: Text("Cancel"),
-                      onPressed: () {
-                        Navigator.of(context).pop();
-                        Navigator.of(context).pop(); // Close the dialog
-                      },
-                    ),
-                    TextButton(
-                      child: Text("Enable"),
-                      onPressed: () async {
-                        // Navigate to location settings (to enable location services)
-                        await Geolocator.openLocationSettings();
-                        Navigator.of(context).pop();
-                        Navigator.of(context).pop(); // Close the dialog
-                      },
-                    ),
-                  ],
-                );
-              },
-            );
-          return Future.error('Location services are disabled.');
-        }
-
-          permission = await Geolocator.checkPermission();
-        if (permission == LocationPermission.denied) {
-          permission = await Geolocator.requestPermission();
-          if (permission == LocationPermission.denied) {
-            showDialog(
-              context: context,
-              builder: (BuildContext context) {
-                return AlertDialog(
-                  title: Text("Location Permission Denied"),
-                  content: Text("We need location permissions to proceed. Please allow location permissions to continue."),
-                  actions: <Widget>[
-                    TextButton(
-                      child: Text("OK"),
-                      onPressed: () {
-                        Navigator.of(context).pop();
-                        Navigator.pop(context); 
-                      },
-                    ),
-                  ],
-                );
-              },
-            );
-            return Future.error('Location permissions are denied');
-          }
-        }
-        
-        if (permission == LocationPermission.deniedForever) {
-          showDialog(
-              context: context,
-              builder: (BuildContext context) {
-                return AlertDialog(
-                  title: Text("Location Permission Denied"),
-                  content: Text("We need location permissions to proceed. Please allow location permissions to continue."),
-                  actions: <Widget>[
-                    TextButton(
-                      child: Text("OK"),
-                      onPressed: () {
-                        Navigator.of(context).pop();
-                        Navigator.pop(context); 
-                      },
-                    ),
-                  ],
-                );
-              },
-            );
-          // Permissions are denied forever, handle appropriately. 
-          return Future.error(
-            'Location permissions are permanently denied, we cannot request permissions.');
-        } 
-
-        // When we reach here, permissions are granted and we can
-        // continue accessing the position of the device.
-        return await Geolocator.getCurrentPosition();
-      } 
-      
       
       @override
       void initState() {
         //keys=[];
-        if(widget.viewRide==false){
-          _determinePosition().then((value){
-                lat=value.latitude;
-                long=value.longitude;
-              });
-        readData();
-        }else{
+        
           lat=9.3068;
           long=123.3054;
-        }
+        
         super.initState();
       }
       
@@ -186,78 +78,6 @@ class _StartPageState extends State<StartPage> {
         tilt: 50,)));
       
     }
-    //start - all about geolocator and google map
-
-    //offline db
-    final _myBox=Hive.box('riderBox');
-    //write
-    writeData(){
-        DateTime now = DateTime.now();
-        String yyyy=now.year.toString();
-        String mm=DateFormat('MMMM').format(now);
-        String dd=now.day.toString();
-        String timestamp = "${DateTime.now().millisecondsSinceEpoch}";
-        _myBox.put("$yyyy$mm$dd$timestamp",[widget.rid, widget.ad!.id, lat, long, timestamp,yyyy,mm,dd,false]);
-        Future(()async{
-          await syncData("$yyyy$mm$dd$timestamp");
-        });
-    }
-    
-    //read
-    void readData(){
-      keys=[];
-      for(int i=0; i<_myBox.length; i++){
-        final _key=_myBox.getAt(i);
-        if(_key[0]==widget.rid && _key[1]==widget.ad!.id ){
-          keys.add(_key);
-        }
-        
-      }
-    }
-    
-
-   syncData(String k)async{
-      final db=DatabaseService(riderId: widget.rid, );
-      print("SDfdsfdsfdsf");
-      try {
-                        
-                        final response = await http.get(Uri.parse('https://www.google.com'));
-                        if (response.statusCode == 200) {
-                          
-                          
-                          final key=_myBox.get(k);
-                          if(currDate!="${key[5]}${key[6]}${key[7]}"){
-                            var documentRefYear = FirebaseFirestore.instance.collection('rider').doc(widget.rid).collection("assigned_ads").doc(widget.ad!.id).collection("year").doc(key[5]);
-                          DocumentSnapshot documentSnapshot = await documentRefYear.get();
-                          if(!documentSnapshot.exists){
-                            await db.createDocYear(widget.ad!.id, key[5]);
-                          }
-                          var documentRefMonth=documentRefYear.collection("month").doc(key[6]);
-                          documentSnapshot = await documentRefMonth.get();
-                          if(!documentSnapshot.exists){
-                            await db.createDocMonth(widget.ad!.id, key[5],key[6]);
-                          }
-                          var documentRefDay=documentRefMonth.collection("day").doc(key[7]);
-                          documentSnapshot = await documentRefDay.get();
-                          if(!documentSnapshot.exists){
-                            await db.createDocDay(widget.ad!.id,key[5],key[6],key[7]);
-                          }
-                            currDate="${key[5]}${key[6]}${key[7]}";
-                          
-                          }
-                            await db.createAssignedAdDocOpDate(key[1], key[2], key[3],key[4],key[5]
-                          ,key[6],key[7]);
-                            key[8]=true;
-                            keys.add(key);
-                        
-                          isConn=true;
-                        } else {
-                          isConn=false;
-                        }
-                      } on SocketException catch (_) {
-                          isConn=false;
-                      }
-    }
     void back(){
       keys=[];
       stopBackgroundService();
@@ -266,26 +86,6 @@ class _StartPageState extends State<StartPage> {
           });
       Navigator.pop(context);
     }
-        void _showDialog(){
-          showDialog(context: context, builder: 
-          (context){
-            return CupertinoAlertDialog(
-              title: Text('No internet connection'),
-              content: Text("You are not connected to the internet. All data will be saved locally. Make sure to sync it later."),
-              actions: [
-                MaterialButton(onPressed: ()async{
-                  setState(() {
-                    loading=true;
-                  });
-                  
-                  Navigator.pop(context);
-                  back();
-                },
-                child:Text("OKAY",style: TextStyle(color: Colors.blue),),),
-               ],
-            );
-          });
-        }
   void addPolyline(){
         points.add(LatLng(lat, long));
       _poly.clear();
@@ -294,9 +94,7 @@ class _StartPageState extends State<StartPage> {
       width: 8,
       color: Colors.deepOrange));
       
-      if(widget.viewRide==false){
-        writeData();
-        }
+      
       
     }
   void viewTrail(List<RidesModel> trail){
@@ -321,32 +119,6 @@ class _StartPageState extends State<StartPage> {
   Widget build(BuildContext context) {
     
     
-    
-    void _liveLocation()async{
-    late LocationSettings locationSettings= LocationSettings(
-          accuracy: LocationAccuracy.high,
-          distanceFilter: 100,
-          
-      );
-    
-    StreamSubscription<Position> positionStream = Geolocator.getPositionStream(locationSettings: locationSettings).listen(
-        (Position? position) {
-            setState(() {
-              lat=position!.latitude;
-              long=position.longitude;
-             });
-            if(runOnBackground==true){
-               Future((){
-                 addPolyline();
-               });
-              
-              _goToLocation();
-            }
-            
-        });
-     }
-     
-    
     return WillPopScope(
       onWillPop: ()async{ 
         return false;
@@ -359,7 +131,7 @@ class _StartPageState extends State<StartPage> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Loading(),
-              Text("${keys.length/datalength*100}%")
+              Text("${(keysUploaded.length/keysToUpload.length*100).toStringAsFixed(2)}%")
             ],
           ),
         ),
@@ -371,56 +143,7 @@ class _StartPageState extends State<StartPage> {
           shadowColor: Colors.black,
           backgroundColor:Colors.white,
           actions: <Widget>[
-          if(widget.viewRide==false)
-          TextButton(onPressed: ()async{
-                    if(widget.viewRide==false){
-                        if(runOnBackground==false){
-                            
-                            _goToLocation();
-                            _liveLocation();
-                            await initializeService();
-                            setState(() {
-                              runOnBackground=true;
-                            });
-                            
-                            
-                            
-                        }else{
-                            
-                            setState(() {
-                              loading=true;
-                              datalength=_myBox.length;
-                            });
-                             for(int i=0; i<keys.length;i++){
-                                _myBox.delete("${keys[i][5]}${keys[i][6]}${keys[i][7]}${keys[i][4]}");
-                            }
-                             for(int i=0; i<_myBox.length; i++){
-                              final _key=_myBox.getAt(i);
-                              if(_key[0]==widget.rid){
-                                
-                                await syncData("${_key[5]}${_key[6]}${_key[7]}${_key[4]}");
-                                }
-                            }
-                            for(int i=0; i<keys.length;i++){
-                                _myBox.delete("${keys[i][5]}${keys[i][6]}${keys[i][7]}${keys[i][4]}");
-                            }
-
-                            if(isConn==false){
-                            setState(() {
-                            //runOnBackground=true;
-                            loading=false;
-                             _showDialog();
-                              });
-                          
-                            }else{
-                              
-                              back();
-                            }
-                         }
-                    }
-                 
-                
-                }, child: Text((runOnBackground==false)?"START":"STOP", style: TextStyle(color:(runOnBackground==false)?Colors.green[700]:Colors.red[700]),)),
+          
           if(runOnBackground==false)
           TextButton(onPressed: ()async{
             
@@ -450,7 +173,6 @@ class _StartPageState extends State<StartPage> {
                 },
                 ),
             ),
-            if(widget.viewRide==true)
             Container(
               decoration: BoxDecoration(
               color: Colors.white,
@@ -510,7 +232,7 @@ class _StartPageState extends State<StartPage> {
               ),
               child:Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children:(widget.viewRide==true)?
+                    children:
                     [
                       Row(
                         children: [
@@ -521,16 +243,7 @@ class _StartPageState extends State<StartPage> {
                       ),
                       Text("${(trailmark!.isEmpty)?0:((trailmark!.length-1)*100)/1000} Km", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color:Colors.black),)
                     ]
-                    : [
-                      Row(
-                        children: [
-                          Icon(Icons.timer_outlined,color:(runOnBackground==false)? Colors.red:Colors.green,),
-                          SizedBox(width: 8,),
-                          Text("Location change", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),)
-                        ],
-                      ),
-                      Text((points.length==0)?"0.0 Km":"${((points.length-1)*100)/1000} Km", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color:(runOnBackground==false)? Colors.black54:Colors.black),)
-                    ],
+                    
                 ),
             ),
       
