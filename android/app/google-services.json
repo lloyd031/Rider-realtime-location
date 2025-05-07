@@ -7,9 +7,47 @@
   "client": [
     {
       "client_info": {
+        "mobilesdk_app_id": "1:692508750758:android:857112d08005b5b0aa5567",
+        "android_client_info": {
+          "package_name": "com.example.realtimelocation_admin"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAOlSABm4O1aTe8erxSfqrzAi9QNNZILRo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
         "mobilesdk_app_id": "1:692508750758:android:bef11f8b2da8bf0eaa5567",
         "android_client_info": {
           "package_name": "com.example.rider_realtime_location"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAOlSABm4O1aTe8erxSfqrzAi9QNNZILRo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:692508750758:android:d2380fc866b881cbaa5567",
+        "android_client_info": {
+          "package_name": "com.fastads.app"
         }
       },
       "oauth_client": [],

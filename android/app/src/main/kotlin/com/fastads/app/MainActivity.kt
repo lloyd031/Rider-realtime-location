@@ -1,4 +1,4 @@
-package com.example.rider_realtime_location
+package com.fastads.app
 
 import io.flutter.embedding.android.FlutterActivity
 

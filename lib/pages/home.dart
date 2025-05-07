@@ -40,6 +40,7 @@ class _HomeState extends State<Home> {
    
      var  _myStateBox =  Hive.box('stateBox');
      dynamic key=_myStateBox.get('state');
+     
      return (_myStateBox.isNotEmpty)?StartRide(key[0], Ad_Model(key[1][0],key[1][1]),true): Scaffold(
       backgroundColor: Colors.white,
       appBar:  AppBar(
@@ -66,12 +67,15 @@ class _HomeState extends State<Home> {
         child:(screenView==0)?Text("My Profile")
         :(screenView==2)?Ad_List(widget.rid,true)
         :(screenView==4)?Archive(rid: widget.rid,):
-        Column(
-        children: [
+        SingleChildScrollView(
+          scrollDirection: Axis.vertical,
+          child: Column(
           
+          children: [
           Ad_List(widget.rid,false),
-        ],
-      ) ,) ),
+          ],
+                ),
+        ) ,) ),
     );
   }
 }

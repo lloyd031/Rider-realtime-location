@@ -3,12 +3,14 @@ import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:hive/hive.dart';
 import 'package:http/http.dart' as http;
+import 'package:provider/provider.dart';
 import 'package:rider_realtime_location/main.dart';
 import 'package:rider_realtime_location/models/Ad.dart';
+import 'package:rider_realtime_location/models/AdState.dart';
 import 'package:rider_realtime_location/pages/loading.dart';
 import 'package:rider_realtime_location/pages/wrapper.dart';
 import 'package:rider_realtime_location/services/database_service.dart';
@@ -31,7 +33,7 @@ class _StartRideState extends State<StartRide> {
         bool isRunning=false;
         List<dynamic> keys=[];
         bool uploaded=false;
-        
+        List<String> keysUploaded=[];
         Future<Position> _determinePosition() async {
               bool locServiceEnabled;
               LocationPermission permission;
@@ -125,19 +127,21 @@ class _StartRideState extends State<StartRide> {
               // continue accessing the position of the device.
               return await Geolocator.getCurrentPosition();
             }
+
+        
         void uploadData(_myBox)async{
           setState(() {
             loading=true;
           });
             
             for(int i=0; i<keys.length;i++){
-              await SyncData(keys[i]);
+              await SyncData(keys[i],_myBox);
               if(isConn==false){
                   i=keys.length;
                 }
             }
           for(int i=0; i<keysUploaded.length;i++){
-              _myBox.delete("${keys[i][5]}${keys[i][6]}${keys[i][7]}${keys[i][4]}");
+              _myBox.delete(keysUploaded[i]);
           }
           
           setState(() {
@@ -175,7 +179,7 @@ class _StartRideState extends State<StartRide> {
           });
           
         }
-        SyncData(dynamic key)async{
+        SyncData(dynamic key,_myBox)async{
             final db=DatabaseService(riderId: widget.rid, );
             try {
                               
@@ -205,10 +209,10 @@ class _StartRideState extends State<StartRide> {
                                 }
                                   await db.createAssignedAdDocOpDate(key[1], key[2], key[3],key[4],key[5]
                                 ,key[6],key[7]);
-                                setState(() {
-                                  keysUploaded.add(key);
-                                });
-                                key[8]=true;
+                              keysUploaded.add("${key[5]}${key[6]}${key[7]}${key[4]}");
+                              key[8]=true;
+                              await _myBox.put("${key[5]}${key[6]}${key[7]}${key[4]}", key);
+                              keysUploaded.add("${key[5]}${key[6]}${key[7]}${key[4]}");
                                 isConn=true;
                               } else {
                                 isConn=false;
@@ -227,8 +231,12 @@ class _StartRideState extends State<StartRide> {
         keys=[];
         for(int i=0; i<_myBox.length; i++){
           final _key=_myBox.getAt(i);
-          if(_key!=null && _key[0]==widget.rid && _key[8]==false ){
-            keys.add(_key);
+          if(_key!=null && _key[0]==widget.rid && _key[1]==widget.ad!.id  ){
+            if(_key[8]==false){
+              keys.add(_key);
+            }else{
+              keysUploaded.add("${_key[5]}${_key[6]}${_key[7]}${_key[4]}");
+            }
           }
           
         }
@@ -236,13 +244,15 @@ class _StartRideState extends State<StartRide> {
           
           uploadData(_myBox);
         }else{
+          for(int i=0; i<keysUploaded.length;i++){
+              _myBox.delete(keysUploaded[i]);
+          }
             setState(() {
               uploaded=true;
             });
           
         }
       }
-       
       @override
       void initState() {
         //keys=[];
@@ -255,6 +265,29 @@ class _StartRideState extends State<StartRide> {
          
         super.initState();
       }
+      BannerAd? banner;
+
+        @override
+        void didChangeDependencies()
+        {
+          super.didChangeDependencies();
+          final adState=Provider.of<AdState>(context);
+          adState.initialization.then((value){
+            setState(() {
+              banner=BannerAd(
+                adUnitId: adState.bannerAdUnitId,
+                size:AdSize.banner , 
+                request: AdRequest(),
+                listener: adState.bannerAdListener)..load();
+              
+            });
+          });
+        }
+        @override
+        void dispose() {
+          banner!.dispose();
+          super.dispose();
+        }
   @override
   Widget build(BuildContext context) {
     final state=Hive.box('stateBox');
@@ -281,10 +314,9 @@ class _StartRideState extends State<StartRide> {
           shadowColor: Colors.black,
           backgroundColor:Colors.white,
           actions: <Widget>[
-          if(isRunning==false)
+          if(isRunning==false && widget.preserved==false)
           TextButton(onPressed: ()async{
-            
-                 Navigator.pop(context); 
+            Navigator.pop(context); 
           }, child: Text("BACK", style: TextStyle(color:Colors.red[700]),))
         ],
           
@@ -296,10 +328,14 @@ class _StartRideState extends State<StartRide> {
           child: Column(
             mainAxisSize: MainAxisSize.max,
             crossAxisAlignment: CrossAxisAlignment.center,
-            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text((widget.ad!.name=="")?"FAST Ads":"${widget.ad!.name}", style: TextStyle(fontWeight: FontWeight.bold, color: const Color.fromARGB(221, 29, 29, 29), fontSize: 16),),
-              
+              SizedBox(),
+              Column(
+                children: [
+                  Text((widget.ad!.name=="")?"FAST Ads":"${widget.ad!.name}", style: TextStyle(fontWeight: FontWeight.bold, color: const Color.fromARGB(221, 29, 29, 29), fontSize: 16),),
+                  //Text("Realtime Rider Location", style: TextStyle(fontWeight: FontWeight.bold, color:  Colors.red, fontSize: 20),),
+                  //Lottie.asset('assets/rider.json'),
               (uploaded==true)?TextButton(
                 onPressed: () {
                   if(widget.preserved==true){
@@ -328,7 +364,6 @@ class _StartRideState extends State<StartRide> {
                   setState(() {
                     isRunning=true;
                   });
-                  
                   }else
                   {
                     if(uploaded==false){
@@ -353,6 +388,15 @@ class _StartRideState extends State<StartRide> {
                   style: TextStyle(color: Colors.white),
                 ),
               )
+                ],
+              ),
+
+              Container(
+                            height:(banner==null)?8:55,
+                            width:(banner==null)?0:320, 
+                            color:Colors.white,
+                            child:(banner==null)?null:AdWidget(ad:banner!) ,
+                            ),
             ],
           ),
         )

@@ -81,15 +81,49 @@ class AdDetail extends StatelessWidget {
   Widget build(BuildContext context) {
     
     final adData = Provider.of<Ad_Model>(context);
-    return Column(
-                      children: [
-                        InkWell(
-                          onTap: (){
-                            Navigator.push(context, MaterialPageRoute(builder: (context)=>(viewRide==false)?StartRide(rid,adData,false):StartPage(rid, adData)));
-                          },
-                          child:  Text("${adData.name}",overflow: TextOverflow.ellipsis, style: GoogleFonts.roboto(fontSize: 18, color: Colors.black,)),
-                        ),
-                      ],
-                    );
+    return InkWell(
+  onTap: () {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => (viewRide == false)
+            ? StartRide(rid, adData, false)
+            : StartPage(rid, adData),
+      ),
+    );
+  },
+  child: Container(
+    margin: EdgeInsets.only(bottom: 8),
+    padding: EdgeInsets.all(12),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      boxShadow: [
+        BoxShadow(
+          color: Colors.grey.withOpacity(0.3),
+          spreadRadius: 2,
+          blurRadius: 5,
+          offset: Offset(0, 3),
+        ),
+      ],
+      borderRadius: BorderRadius.circular(8),
+    ),
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Expanded(
+          child: Text(
+            adData.name,
+            overflow: TextOverflow.ellipsis,
+            style: GoogleFonts.roboto(
+              fontSize: 18,
+              color: Colors.black,
+            ),
+          ),
+        ),
+        Icon(Icons.arrow_forward_ios, size: 16, color: Colors.black),
+      ],
+    ),
+  ),
+);
   }
 }
