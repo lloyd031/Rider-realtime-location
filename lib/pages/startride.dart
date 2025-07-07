@@ -4,13 +4,11 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:hive/hive.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 import 'package:rider_realtime_location/main.dart';
 import 'package:rider_realtime_location/models/Ad.dart';
-import 'package:rider_realtime_location/models/AdState.dart';
 import 'package:rider_realtime_location/pages/loading.dart';
 import 'package:rider_realtime_location/pages/wrapper.dart';
 import 'package:rider_realtime_location/services/database_service.dart';
@@ -185,34 +183,30 @@ class _StartRideState extends State<StartRide> {
                               
                               final response = await http.get(Uri.parse('https://www.google.com'));
                               if (response.statusCode == 200) {
-                                
-                                
-                                if(currDate!="${key[5]}${key[6]}${key[7]}"){
-                                  var documentRefYear = FirebaseFirestore.instance.collection('rider').doc(widget.rid).collection("assigned_ads").doc(key[1]).collection("year").doc(key[5]);
-                                DocumentSnapshot documentSnapshot = await documentRefYear.get();
+                                if(currDate!="${key[5]}}"){
+                                  var documentRefDate = FirebaseFirestore.instance.collection('date').doc(key[5]);
+                                DocumentSnapshot documentSnapshot = await documentRefDate.get();
                                 if(!documentSnapshot.exists){
-                                  await db.createDocYear(key, key[5]);
-                                }
-                                var documentRefMonth=documentRefYear.collection("month").doc(key[6]);
-                                documentSnapshot = await documentRefMonth.get();
-                                if(!documentSnapshot.exists){
-                                  await db.createDocMonth(key[1], key[5],key[6]);
-                                }
-                                var documentRefDay=documentRefMonth.collection("day").doc(key[7]);
-                                documentSnapshot = await documentRefDay.get();
-                                if(!documentSnapshot.exists){
-                                  await db.createDocDay(key[1],key[5],key[6],key[7]);
+                                  await db.createDocDate(key[5]);
                                 }
                                 setState(() {
-                                  currDate="${key[5]}${key[6]}${key[7]}";
+                                  currDate="${key[5]}";
                                 });
                                 }
-                                  await db.createAssignedAdDocOpDate(key[1], key[2], key[3],key[4],key[5]
-                                ,key[6],key[7]);
-                              keysUploaded.add("${key[5]}${key[6]}${key[7]}${key[4]}");
-                              key[8]=true;
-                              await _myBox.put("${key[5]}${key[6]}${key[7]}${key[4]}", key);
-                              keysUploaded.add("${key[5]}${key[6]}${key[7]}${key[4]}");
+                                if(currRider!="${key[0]}"){
+                                  var documentRefDate = FirebaseFirestore.instance.collection('date').doc(key[5]).collection("rider").doc(key[0]);
+                                DocumentSnapshot documentSnapshot = await documentRefDate.get();
+                                if(!documentSnapshot.exists){
+                                  await db.createRiderDocToDate(key[5]);
+                                }
+                                  currRider="${key[0]}";
+                                
+                                }
+                                  await db.createAssignedAdDocOpDate(key[1], key[2], key[3],key[4],key[5]);
+                              keysUploaded.add("${key[5]}${key[4]}");
+                              key[6]=true;
+                              await _myBox.put("${key[5]}${key[4]}", key);
+                              keysUploaded.add("${key[5]}${key[4]}");
                                 isConn=true;
                               } else {
                                 isConn=false;
@@ -232,10 +226,10 @@ class _StartRideState extends State<StartRide> {
         for(int i=0; i<_myBox.length; i++){
           final _key=_myBox.getAt(i);
           if(_key!=null && _key[0]==widget.rid && _key[1]==widget.ad!.id  ){
-            if(_key[8]==false){
+            if(_key[6]==false){
               keys.add(_key);
             }else{
-              keysUploaded.add("${_key[5]}${_key[6]}${_key[7]}${_key[4]}");
+              keysUploaded.add("${_key[5]}${_key[4]}");
             }
           }
           
@@ -265,29 +259,9 @@ class _StartRideState extends State<StartRide> {
          
         super.initState();
       }
-      BannerAd? banner;
 
-        @override
-        void didChangeDependencies()
-        {
-          super.didChangeDependencies();
-          final adState=Provider.of<AdState>(context);
-          adState.initialization.then((value){
-            setState(() {
-              banner=BannerAd(
-                adUnitId: adState.bannerAdUnitId,
-                size:AdSize.banner , 
-                request: AdRequest(),
-                listener: adState.bannerAdListener)..load();
-              
-            });
-          });
-        }
-        @override
-        void dispose() {
-          banner!.dispose();
-          super.dispose();
-        }
+        
+      
   @override
   Widget build(BuildContext context) {
     final state=Hive.box('stateBox');
@@ -388,15 +362,11 @@ class _StartRideState extends State<StartRide> {
                   style: TextStyle(color: Colors.white),
                 ),
               )
+              
                 ],
               ),
 
-              Container(
-                            height:(banner==null)?8:55,
-                            width:(banner==null)?0:320, 
-                            color:Colors.white,
-                            child:(banner==null)?null:AdWidget(ad:banner!) ,
-                            ),
+            SizedBox(),
             ],
           ),
         )

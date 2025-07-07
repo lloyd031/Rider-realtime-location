@@ -14,8 +14,9 @@ import 'package:rider_realtime_location/services/auth.dart';
 import 'package:rider_realtime_location/services/database_service.dart';
 
 class Home extends StatefulWidget {
+  final Function login;
   final String? rid;
-  const Home(this.rid);
+  const Home(this.rid, this.login);
 
   @override
   State<Home> createState() => _HomeState();
@@ -52,30 +53,21 @@ class _HomeState extends State<Home> {
       backgroundColor:Colors.white,
       
       ),
-      drawer:StreamProvider<RiderObj?>.value(
-        value: DatabaseService(riderId:widget.rid).riderDetails,
-        initialData: RiderObj("", "", "",""),
-        child:
-          MyDrawer(switchScreen: switchScreen),
-        
-      ) ,
+      drawer:MyDrawer(switchScreen: switchScreen,login: widget.login) ,
           
       
-      body:SafeArea(child:StreamProvider<List<Ad_Model>>.value(
-        value: DatabaseService(riderId:widget.rid).getAssignedAd,
-        initialData: List.empty(),
-        child:(screenView==0)?Text("My Profile")
-        :(screenView==2)?Ad_List(widget.rid,true)
-        :(screenView==4)?Archive(rid: widget.rid,):
-        SingleChildScrollView(
-          scrollDirection: Axis.vertical,
-          child: Column(
-          
-          children: [
-          Ad_List(widget.rid,false),
-          ],
-                ),
-        ) ,) ),
+      body:SafeArea(child:(screenView==0)?Text("My Profile")
+      :(screenView==2)?Ad_List(widget.rid,true)
+      :(screenView==4)?Archive(rid: widget.rid,):
+      SingleChildScrollView(
+        scrollDirection: Axis.vertical,
+        child: Column(
+        
+        children: [
+        Ad_List(widget.rid,false),
+        ],
+              ),
+      ) ),
     );
   }
 }

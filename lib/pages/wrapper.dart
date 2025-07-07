@@ -59,17 +59,35 @@ class _WrapperState extends State<Wrapper> {
   void initState() {
     // TODO: implement initState
     _determinePosition().then((value){});
+    login();
     super.initState();
+  }
+  bool isLoggedIn=false;
+  void login(){
+    
+     var userBox=Hive.box('userBox');
+    if(userBox.isEmpty)
+    {
+      setState(() {
+        isLoggedIn=false;
+      });
+    }else{
+      setState(() {
+        isLoggedIn=true;
+      });
+    }
   }
   @override
   Widget build(BuildContext context) {
-    final user = Provider.of<RiderObj?>(context);
-    if(user==null)
+    
+    if(isLoggedIn==false)
     {
-      return Authenticate();
+      return Authenticate(login: login,);
     }else
     {
-      return Home(user.uid);
+      var userBox=Hive.box('userBox');
+      String? rider_id=userBox.get(0)[1].toString();
+      return Home(rider_id,login);
       
     }
   }

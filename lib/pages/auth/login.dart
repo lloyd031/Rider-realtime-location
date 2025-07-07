@@ -1,24 +1,24 @@
 
-import 'package:firebase_auth/firebase_auth.dart';
+
 import 'package:flutter/material.dart';
 import 'package:rider_realtime_location/pages/loading.dart';
-import 'package:rider_realtime_location/services/auth.dart';
-import 'package:rider_realtime_location/pages/startpage.dart';
+import 'package:rider_realtime_location/services/apiService.dart';
 
 class LogIn extends StatefulWidget {
   final Function switchAuth;
-  const LogIn({super.key, required this.switchAuth});
+  final Function login;
+  const LogIn({super.key, required this.switchAuth,required this.login});
   @override
   _LogInState createState() => _LogInState();
 }
 
 class _LogInState extends State<LogIn> {
-  final  auth=AuthService();
+  final  auth=Apiservice();
  
   final _formKey=GlobalKey<FormState>();
   String error=" ";
   bool loading=false;
-  String email="";
+  String uname="";
   String pw="";
   
   @override
@@ -48,13 +48,13 @@ class _LogInState extends State<LogIn> {
             children: [
               TextFormField(
                 decoration: InputDecoration(
-                  labelText: 'Email',
+                  labelText: 'Username',
                   border: OutlineInputBorder(),
                 ),
                 keyboardType: TextInputType.emailAddress,
                 onChanged: (val){
                   setState(() {
-                    email=val;
+                   uname=val;
                   });
                 },
                 validator: (val)=>val!.isEmpty?"Rquired":null,
@@ -76,7 +76,7 @@ class _LogInState extends State<LogIn> {
               SizedBox(height: 16),
               Text(error , style: TextStyle(color: Colors.red),),
               SizedBox(height: 16),
-              TextButton(onPressed:(){widget.switchAuth();}, child:Text("Signup instead")),
+              //TextButton(onPressed:(){widget.switchAuth();}, child:Text("Signup instead")),
                 SizedBox(height: 16),
               ElevatedButton(
                 onPressed: ()async{
@@ -84,13 +84,15 @@ class _LogInState extends State<LogIn> {
                       setState(() {
                         loading=true;
                       });
-                      dynamic result= await auth.signIn(email, pw);
+                      dynamic result= await auth.login(uname, pw);
                       if(result==null){
                         setState(() {
                            error="Invalid email or password";
                            loading=false;
                         });;
-                      }else{}
+                      }else{
+                        widget.login();
+                      }
                   }
                 },
                 child: Text('Log In'),

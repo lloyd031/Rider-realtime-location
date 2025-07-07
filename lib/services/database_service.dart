@@ -9,6 +9,7 @@ class DatabaseService {
   final _db=FirebaseFirestore.instance;
   final CollectionReference riderCollection=FirebaseFirestore.instance.collection("rider");
   final CollectionReference adCollection=FirebaseFirestore.instance.collection("ad");
+  final CollectionReference dateCollection=FirebaseFirestore.instance.collection("date");
   final String? riderId;
   final String? adId;
   final String? year;
@@ -22,31 +23,23 @@ class DatabaseService {
       'fn':fn,
       'ln':ln,
       'email':email,
-      'ads':[]
+      
      });
   }
- 
-  Future createDocYear(String? adId, String? yyyy)async{
-    
-     return await riderCollection.doc(riderId).collection("assigned_ads").doc(adId).collection("year").doc(yyyy).set({
-      'n':'yr'
+  Future createDocDate( String? date)async{
+     return await dateCollection.doc(date).set({
+      'n':'d'
      });
   }
-  Future createDocMonth(String? adId, String? yyyy, String? mm)async{
-    
-     return await riderCollection.doc(riderId).collection("assigned_ads").doc(adId).collection("year").doc(yyyy).collection("month").doc(mm).set({
-      'n':'mnth'
+  Future createRiderDocToDate( String? date)async{
+     return await dateCollection.doc(date).collection("rider").doc(riderId).set({
+      'n':'d'
      });
   }
-  Future createDocDay(String? adId, String? yyyy, String? mm, String dd)async{
+  
+  Future createAssignedAdDocOpDate(String? adId, double lat, double long,String? timestamp,String? date)async{
     
-     return await riderCollection.doc(riderId).collection("assigned_ads").doc(adId).collection("year").doc(yyyy).collection("month").doc(mm).collection("day").doc(dd).set({
-      'n':'day'
-     });
-  }
-  Future createAssignedAdDocOpDate(String? adId, double lat, double long,String? timestamp, String? yyyy, String? mm, String? dd)async{
-    
-     return await riderCollection.doc(riderId).collection("assigned_ads").doc(adId).collection("year").doc(yyyy).collection("month").doc(mm).collection("day").doc(dd).collection("rides").doc().set({
+     return await dateCollection.doc(date).collection("rider").doc(riderId).collection("rides").doc().set({
       'lat':lat,
       'long':long,
       'timestamp':timestamp

@@ -24,6 +24,7 @@ List<dynamic> keysUploaded=[];
 List<dynamic> keysAll=[];
 bool loading=false;
 String currDate="";
+String currRider="";
 bool isConn=true;
 
 void uploadData()async{
@@ -38,7 +39,7 @@ void uploadData()async{
               }
           }
         for(int i=0; i<keysUploaded.length;i++){
-            _myBox.delete("${keys[i][5]}${keys[i][6]}${keys[i][7]}${keys[i][4]}");
+            _myBox.delete("${keys[i][5]}${keys[i][4]}");
         }
          readData();
         
@@ -58,7 +59,7 @@ void uploadData()async{
       keysAll=[];
       for(int i=0; i<_myBox.length; i++){
         final _key=_myBox.getAt(i);
-        if(_key[0]==widget.rid && _key[8]==false){
+        if(_key[0]==widget.rid && _key[6]==false){
           keys.add(_key);
         }
         keysAll.add(_key);
@@ -74,32 +75,32 @@ void uploadData()async{
                         if (response.statusCode == 200) {
                           
                           
-                          if(currDate!="${key[5]}${key[6]}${key[7]}"){
-                            var documentRefYear = FirebaseFirestore.instance.collection('rider').doc(widget.rid).collection("assigned_ads").doc(key[1]).collection("year").doc(key[5]);
-                          DocumentSnapshot documentSnapshot = await documentRefYear.get();
+                          if(currDate!="${key[5]}}"){
+                            var documentRefDate = FirebaseFirestore.instance.collection('date').doc(key[5]);
+                          DocumentSnapshot documentSnapshot = await documentRefDate.get();
                           if(!documentSnapshot.exists){
-                            await db.createDocYear(key, key[5]);
+                            await db.createDocDate(key[5]);
                           }
-                          var documentRefMonth=documentRefYear.collection("month").doc(key[6]);
-                          documentSnapshot = await documentRefMonth.get();
-                          if(!documentSnapshot.exists){
-                            await db.createDocMonth(key[1], key[5],key[6]);
-                          }
-                          var documentRefDay=documentRefMonth.collection("day").doc(key[7]);
-                          documentSnapshot = await documentRefDay.get();
-                          if(!documentSnapshot.exists){
-                            await db.createDocDay(key[1],key[5],key[6],key[7]);
-                          }
+                          
+                          
                           setState(() {
-                            currDate="${key[5]}${key[6]}${key[7]}";
+                            currDate="${key[5]}";
                           });
                           }
-                            await db.createAssignedAdDocOpDate(key[1], key[2], key[3],key[4],key[5]
-                          ,key[6],key[7]);
+                          if(currRider!="${key[0]}"){
+                                  var documentRefDate = FirebaseFirestore.instance.collection('date').doc(key[5]).collection("rider").doc(key[0]);
+                                DocumentSnapshot documentSnapshot = await documentRefDate.get();
+                                if(!documentSnapshot.exists){
+                                  await db.createRiderDocToDate(key[5]);
+                                }
+                                  currRider="${key[0]}";
+                                
+                                }
+                            await db.createAssignedAdDocOpDate(key[1], key[2], key[3],key[4],key[5]);
                           setState(() {
                             keysUploaded.add(key);
                           });
-                          key[8]=true;
+                          key[6]=true;
                           isConn=true;
                         } else {
                           isConn=false;

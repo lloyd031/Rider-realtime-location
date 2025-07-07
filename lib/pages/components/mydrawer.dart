@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:hive/hive.dart';
 import 'package:provider/provider.dart';
 import 'package:rider_realtime_location/models/Rider.dart';
 import 'package:rider_realtime_location/services/auth.dart';
 
 class MyDrawer extends StatefulWidget {
+  final Function login;
   final Function? switchScreen;
-  const MyDrawer({super.key, required this.switchScreen});
+  const MyDrawer({super.key, required this.switchScreen, required this.login});
 
   @override
   State<MyDrawer> createState() => _MyDrawerState();
@@ -15,13 +18,12 @@ class _MyDrawerState extends State<MyDrawer> {
   final  auth=AuthService();
   @override
   Widget build(BuildContext context) {
-    final rider = Provider.of<RiderObj?>(context);
     return Drawer(
         child: ListView(
               padding: EdgeInsets.zero,
               children: [
                 UserAccountsDrawerHeader(
-                    accountName: Text('${rider!.fn} ${rider.ln}'), accountEmail: Text('${rider!.email}'),
+                    accountName: Text('Rider'), accountEmail: Text('username'),
                     currentAccountPicture: CircleAvatar(
                       child: ClipOval(
                         child: Image.network('https://images.pexels.com/photos/1040881/pexels-photo-1040881.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
@@ -106,8 +108,11 @@ class _MyDrawerState extends State<MyDrawer> {
                 ListTile(
                   leading:const Icon(Icons.exit_to_app),
                   title:const Text('Signout'),
-                  onTap: ()async{
-                   await auth.signOut();
+                  onTap: (){
+                   var box=Hive.box('userBox');
+                   box.clear();
+                   widget.login;
+                   SystemNavigator.pop();
                   },
                 ),
               ],

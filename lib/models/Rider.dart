@@ -1,8 +1,8 @@
 class RiderObj
 {
-  final String? uid;
-  final String? email;
+  final String? id;
+  final String? username;
   final String? fn;
   final String? ln;
-  RiderObj(this.uid,this.email, this.fn, this.ln);
+  RiderObj(this.id, this.fn, this.ln,this.username,);
 }

@@ -3,7 +3,8 @@ import 'package:rider_realtime_location/pages/auth/login.dart';
 import 'package:rider_realtime_location/pages/auth/signup.dart';
 
 class Authenticate extends StatefulWidget {
-  const Authenticate({super.key});
+  final Function login;
+  const Authenticate({super.key, required this.login});
 
   @override
   State<Authenticate> createState() => _AuthenticateState();
@@ -20,6 +21,6 @@ class _AuthenticateState extends State<Authenticate> {
   @override
   Widget build(BuildContext context) {
     
-    return (islogin==true)?LogIn(switchAuth: switchAuth,):SignUp(switchAuth: switchAuth,);
+    return (islogin==true)?LogIn(switchAuth: switchAuth,login: widget.login,):SignUp(switchAuth: switchAuth,);
   }
 }

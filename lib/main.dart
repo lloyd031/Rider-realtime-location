@@ -2,16 +2,12 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:ui';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/rendering.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:hive_flutter/adapters.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import 'package:rider_realtime_location/models/Ad.dart';
-import 'package:rider_realtime_location/models/AdState.dart';
 import 'package:rider_realtime_location/services/auth.dart';
 import 'package:rider_realtime_location/services/database_service.dart';
 import 'package:socket_io_client/socket_io_client.dart' as io;
@@ -23,18 +19,15 @@ import 'package:firebase_core/firebase_core.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  final initFuture=MobileAds.instance.initialize();
-  final adState=AdState(initFuture);
   await Firebase.initializeApp();
   await Hive.initFlutter();
   var box= await Hive.openBox('riderBox');
+  var userBox= Hive.openBox('userBox');
   var state= await Hive.openBox('stateBox');
+  
   await initializeService();
-  await initializeNotifications();  
-  runApp(Provider.value(
-    value: adState,
-    builder: (context, child)=>const MyApp(),
-  ),);
+  
+  runApp(const MyApp(),);
 }
 
 Future<void> initializeNotifications() async {
@@ -58,7 +51,7 @@ void startBackgroundService() {
   
   final service = FlutterBackgroundService();
   service.startService();
-  
+  initializeNotifications();  
 }
 
 void stopBackgroundService() {
@@ -137,10 +130,10 @@ void onStart(ServiceInstance service) async {
           await Hive.box('stateBox').close(); // Close the old in-memory view
       }
     var state=await Hive.openBox('stateBox');
-    final key=state.get('state');
-    db=DatabaseService(riderId:key[0]);
-    rid=key[0];
-    adId=key[1][0];
+    final keyState=state.get('state');
+    db=DatabaseService(riderId:keyState[0]);
+    rid=keyState[0];
+    adId=keyState[1][0];
     late LocationSettings locationSettings= LocationSettings(
           accuracy: LocationAccuracy.high,
           distanceFilter: 100,
@@ -150,13 +143,9 @@ void onStart(ServiceInstance service) async {
     StreamSubscription<Position> positionStream = Geolocator.getPositionStream(locationSettings: locationSettings).listen(
         (Position? position) async{
 
-             if(moved==false){
-              moved=true;
-             }else{
-              Future((){
+             Future((){
               writeData(position!,box);
              });
-             }
              if (service is AndroidServiceInstance) {
               service.setForegroundNotificationInfo(
                 title: 'FAST Ads',
@@ -171,6 +160,7 @@ void onStart(ServiceInstance service) async {
 
  bool isConn=true;
  String currDate="";
+ String currRider="";
  
  writeData(Position pos, var box){
 
@@ -179,9 +169,10 @@ void onStart(ServiceInstance service) async {
         String mm=DateFormat('MMMM').format(now);
         String dd=now.day.toString();
         String timestamp = "${DateTime.now().millisecondsSinceEpoch}";
-        box.put("$yyyy$mm$dd$timestamp",[rid,adId, pos.latitude, pos.longitude, timestamp,yyyy,mm,dd,false]);
+        String date="$mm-$dd-$yyyy";
+        box.put("$date$timestamp",[rid,adId, pos.latitude, pos.longitude, timestamp,date,false]);
         Future(()async{
-          await syncData("$yyyy$mm$dd$timestamp",box);
+          await syncData("$date$timestamp",box);
         });
     }
 
@@ -194,27 +185,27 @@ void onStart(ServiceInstance service) async {
               
               
               final key=box.get(k);
-              if(currDate!="${key[5]}${key[6]}${key[7]}"){
-                var documentRefYear = FirebaseFirestore.instance.collection('rider').doc(rid).collection("assigned_ads").doc(adId).collection("year").doc(key[5]);
-              DocumentSnapshot documentSnapshot = await documentRefYear.get();
+              
+              if(currDate!="${key[5]}"){
+                var documentRefDate = FirebaseFirestore.instance.collection('date').doc(key[5]);
+              DocumentSnapshot documentSnapshot = await documentRefDate.get();
               if(!documentSnapshot.exists){
-                await db.createDocYear(adId, key[5]);
+                await db.createDocDate(key[5]);
               }
-              var documentRefMonth=documentRefYear.collection("month").doc(key[6]);
-              documentSnapshot = await documentRefMonth.get();
-              if(!documentSnapshot.exists){
-                await db.createDocMonth(adId, key[5],key[6]);
-              }
-              var documentRefDay=documentRefMonth.collection("day").doc(key[7]);
-              documentSnapshot = await documentRefDay.get();
-              if(!documentSnapshot.exists){
-                await db.createDocDay(adId,key[5],key[6],key[7]);
-              }
-                currDate="${key[5]}${key[6]}${key[7]}";
+                currDate="${key[5]}";
               
               }
-                await db.createAssignedAdDocOpDate(key[1], key[2], key[3],key[4],key[5],key[6],key[7]);
-                key[8]=true;
+              if(currRider!="${key[0]}"){
+                var documentRefDate = FirebaseFirestore.instance.collection('date').doc(key[5]).collection("rider").doc(key[0]);
+              DocumentSnapshot documentSnapshot = await documentRefDate.get();
+              if(!documentSnapshot.exists){
+                await db.createRiderDocToDate(key[5]);
+              }
+                currRider="${key[0]}";
+              
+              }
+                await db.createAssignedAdDocOpDate(key[1], key[2], key[3],key[4],key[5]);
+                key[6]=true;
                 await box.put(k, key);
                 isConn=true;
             } else {
@@ -229,14 +220,10 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return StreamProvider.value(
-      value: AuthService().rider,
-      initialData: null,
-      child: MaterialApp(
-        debugShowCheckedModeBanner: false,
-        title: 'Flutter Demo',
-        home: Wrapper(),
-      ),
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      title: 'Flutter Demo',
+      home: Wrapper(),
     );
   }
 }
