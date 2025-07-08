@@ -255,6 +255,7 @@ class _StartRideState extends State<StartRide> {
                 lat=value.latitude;
                 long=value.longitude;
               });
+              stopBackgroundService();
           }
          
         super.initState();

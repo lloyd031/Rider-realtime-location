@@ -25,7 +25,7 @@ class _Ad_ListState extends State<Ad_List> {
   List<Ad_Model?> adsList=[];
   Future<void> fetchAds() async {
   String rider_id=widget.rid.toString();
-  final response = await http.get(Uri.parse('http://192.168.1.4:8000/api/campaigns?rider_id=$rider_id'),
+  final response = await http.get(Uri.parse('http://192.168.1.5:8000/api/campaigns?rider_id=$rider_id'),
   );
 
   if (response.statusCode == 200) {

@@ -26,7 +26,7 @@ void main() async {
   var state= await Hive.openBox('stateBox');
   
   await initializeService();
-  
+  initializeNotifications();
   runApp(const MyApp(),);
 }
 
@@ -51,7 +51,7 @@ void startBackgroundService() {
   
   final service = FlutterBackgroundService();
   service.startService();
-  initializeNotifications();  
+    
 }
 
 void stopBackgroundService() {
@@ -91,7 +91,8 @@ bool moved=false;
 late FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin;
 @pragma('vm:entry-point')
 void onStart(ServiceInstance service) async {
-  
+  WidgetsFlutterBinding.ensureInitialized();
+  DartPluginRegistrant.ensureInitialized();
   final socket = io.io("your-server-url", <String, dynamic>{
     'transports': ['websocket'],
     'autoConnect': true,
@@ -118,7 +119,7 @@ void onStart(ServiceInstance service) async {
   service.on("start").listen((event) {
     // Handle start event if needed
   });
-   DartPluginRegistrant.ensureInitialized();
+   
    
 
   flutterLocalNotificationsPlugin =FlutterLocalNotificationsPlugin();

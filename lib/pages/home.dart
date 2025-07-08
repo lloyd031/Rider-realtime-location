@@ -38,7 +38,6 @@ class _HomeState extends State<Home> {
   }
   @override
   Widget build(BuildContext context) {
-   
      var  _myStateBox =  Hive.box('stateBox');
      dynamic key=_myStateBox.get('state');
      
