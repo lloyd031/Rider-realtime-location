@@ -8,7 +8,7 @@ class Apiservice {
   Apiservice();
   Future<String?> login(String username, String password) async {
     final response = await http.post(
-      Uri.parse('http://192.168.1.5:8000/api/riders/login'),
+      Uri.parse('https://ads.getapp.com.ph/api/riders/login'),
 
       body: {'username': username, 'password': password},
     );
