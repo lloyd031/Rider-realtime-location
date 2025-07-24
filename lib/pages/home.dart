@@ -81,12 +81,7 @@ class _HomeState extends State<Home> {
                 selectedColor: Colors.purple,
               ),
 
-              /// Search
-              SalomonBottomBarItem(
-                icon: Icon(Icons.share),
-                title: Text("Share"),
-                selectedColor: Colors.orange,
-              ),
+              
 
               /// Profile
               SalomonBottomBarItem(
@@ -161,7 +156,7 @@ class _HomeState extends State<Home> {
                       ],
                     ),
                     Text(
-                      "This month",
+                      "this month",
                       style: GoogleFonts.poppins(
                         textStyle: TextStyle(
                           color: Color.fromRGBO(51, 51, 51, 1),
@@ -190,7 +185,7 @@ class _HomeState extends State<Home> {
                           Expanded(
                             child: TextField(
                               decoration: InputDecoration(
-                                hintText: 'Search task...',
+                                hintText: 'Search campaign...',
                                 hintStyle: TextStyle(
                                   color: Colors.grey[600], // gray placeholder
                                 ),
@@ -269,49 +264,54 @@ class _HomeState extends State<Home> {
                     ),
                     SizedBox(height: 8),
                     Ad_List(widget.rid, false),
-                    SizedBox(height: 16),
-                    Container(
-                      padding: EdgeInsets.symmetric(horizontal: 8),
-                      height: 130,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                'Ready for your ', // Or any greeting
-                                style: GoogleFonts.poppins(
-                                  textStyle: TextStyle(
-                                    fontSize: 22,
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.red[700],
+                    SizedBox(height: 8),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color:Color.fromRGBO(250, 227, 237, 1.0),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        padding: EdgeInsets.symmetric(horizontal: 8),
+                        height: 130,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  'Ready for your ', // Or any greeting
+                                  style: GoogleFonts.poppins(
+                                    textStyle: TextStyle(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.red[700],
+                                    ),
+                                  ),
+                                  softWrap: true,
+                                ),
+                                Text(
+                                  'next ride?', // Or any greeting
+                                  style: GoogleFonts.poppins(
+                                    textStyle: TextStyle(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.w600,
+                                      color: Color.fromRGBO(51, 51, 51, 1),
+                                    ),
                                   ),
                                 ),
-                                softWrap: true,
-                              ),
-                              Text(
-                                'next ride?', // Or any greeting
-                                style: GoogleFonts.poppins(
-                                  textStyle: TextStyle(
-                                    fontSize: 22,
-                                    fontWeight: FontWeight.w600,
-                                    color: Color.fromRGBO(51, 51, 51, 1),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          Expanded(
-                            child: Image.asset(
+                              ],
+                            ),
+                            Image.asset(
                               'assets/rider.png',
                               height: 170, // optional
                               fit:
                                   BoxFit
                                       .cover, // optional (e.g. contain, fill, fitWidth, etc.)
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
                   ],
