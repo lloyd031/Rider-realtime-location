@@ -150,7 +150,7 @@ void onStart(ServiceInstance service) async {
              if (service is AndroidServiceInstance) {
               service.setForegroundNotificationInfo(
                 title: 'FAST Ads',
-                content: 'Ad is running!',
+                content: 'You can now start driving',
               );
             }
         });

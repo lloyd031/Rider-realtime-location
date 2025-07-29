@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:hive/hive.dart';
@@ -24,8 +25,7 @@ class StartRide extends StatefulWidget {
   State<StartRide> createState() => _StartRideState();
 }
 
-class _StartRideState extends State<StartRide>
-    with SingleTickerProviderStateMixin {
+class _StartRideState extends State<StartRide> with SingleTickerProviderStateMixin {
   late double lat;
   late double long;
   bool loading = false;
@@ -34,7 +34,8 @@ class _StartRideState extends State<StartRide>
   bool uploaded = false;
   List<String> keysUploaded = [];
   late AnimationController _controller;
-  late Animation<double> _animation;
+  late Animation<Offset> _slideAnimation;
+  late Animation<double> _fadeAnimation;
   Future<Position> _determinePosition() async {
     bool locServiceEnabled;
     LocationPermission permission;
@@ -280,25 +281,29 @@ class _StartRideState extends State<StartRide>
       });
       stopBackgroundService();
     }
-    _controller = AnimationController(
-      duration: Duration(seconds: 2),
+  _controller = AnimationController(
       vsync: this,
-    )..repeat(reverse: false);
+      duration: Duration(milliseconds: 500),
+    );
 
-    _animation = Tween<double>(
-      begin: 1.0,
-      end: 2.0,
+    _slideAnimation = Tween<Offset>(
+      begin: Offset(0, -1), // Start just above the screen
+      end: Offset(0, 0),    // Slide to normal position
     ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
 
+    _fadeAnimation = CurvedAnimation(
+      parent: _controller,
+      curve: Curves.easeIn,
+    );
+    
     super.initState();
   }
-
   @override
   void dispose() {
-    _controller.dispose();
+    // TODO: implement dispose
+     _controller.dispose();
     super.dispose();
   }
-
   @override
   Widget build(BuildContext context) {
     final state = Hive.box('stateBox');
@@ -341,187 +346,204 @@ class _StartRideState extends State<StartRide>
                         end: Alignment.bottomRight,
                         colors: [
                           Color.fromARGB(255, 122, 193, 252), // Light blue
-                          Colors.blueAccent, 
-                           Color(0xFF0D47A1),// Darker blue
+                          Colors.blueAccent,
+                          Color(0xFF0D47A1), // Darker blue
                         ],
                       ),
                     ),
                     width: double.maxFinite,
-                    child: Column(
-                      mainAxisSize: MainAxisSize.max,
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    child: Stack(
                       children: [
-                        SizedBox(),
-                        Column(
-                          children: [
-                            Container(
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(20),
-                                color: Colors.white,
-                              ),
-                              padding: EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 8,
-                              ),
 
-                              child: Text(
-                                (widget.ad!.name == "")
-                                    ? "FAST Ads"
-                                    : "${widget.ad!.name}",
-                                style: GoogleFonts.baloo2(
-                                  color: Colors.grey.shade800,
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600
-                                ),
+                       
+                        SlideTransition(
+                          position: _slideAnimation,
+                          child: FadeTransition(
+                            opacity: _fadeAnimation,
+                            child: Padding(
+                              
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 12,
                               ),
-                            ),
-                            SizedBox(height: 4),
-                            Column(
-                              children: [
-                                for (int i = 2; i >= 1; i--)
-                                  Padding(
-                                    padding: const EdgeInsets.all(2),
-                                    child: Container(
-                                      width: 10.0 * i,
-                                      height: 10.0 * i,
-                                      decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(
-                                          10.0 * i,
+                              child:Container(
+                            
+                                padding: EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(
+                                        0.1,
+                                      ), // soft black shadow
+                                      blurRadius: 6, // how soft the shadow is
+                                      offset: Offset(0, 3), // x and y offset
+                                    ),
+                                  ],
+                                  borderRadius: BorderRadius.circular(7),
+                                  color: Colors.white,
+                                ),
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.message,
+                                      color: Color.fromRGBO(231, 81, 111, 1.0),
+                                    ),
+                                    SizedBox(width: 10),
+                                    Expanded(
+                                      child: Text(
+                                        "Wait for the “You can now start driving” notification before closing the app.",
+                                        style: GoogleFonts.poppins(
+                                          fontSize: 12,
+                                          color: Colors.grey[800],
                                         ),
-                                        color: Colors.white,
                                       ),
                                     ),
-                                  ),
-                              ],
-                            ),
-                            SizedBox(height: 8),
-                            //Text("Realtime Rider Location", style: TextStyle(fontWeight: FontWeight.bold, color:  Colors.red, fontSize: 20),),
-                            //Lottie.asset('assets/rider.json'),
-                            InkWell(
-                              child:
-                                  (isRunning == true)
-                                      ? Stack(
-                                        alignment: Alignment.center,
-                                        children: [
-                                          AnimatedBuilder(
-                                            animation: _animation,
-                                            builder: (context, child) {
-                                              return Container(
-                                                width: 60 * _animation.value,
-                                                height: 60 * _animation.value,
-                                                decoration: BoxDecoration(
-                                                  shape: BoxShape.circle,
-                                                  border: Border.all(
-                                                    color: Colors.white
-                                                        .withOpacity(
-                                                          _animation.value /
-                                                              2.5,
-                                                        ),
-                                                    width: 3,
-                                                  ),
-                                                  color: Colors.white
-                                                      .withOpacity(
-                                                        1 -
-                                                            _animation.value /
-                                                                2.5,
-                                                      ),
-                                                ),
-                                              );
-                                            },
-                                          ),
-
-                                          Container(
-                                            width: 120,
-                                            height: 120,
-                                            padding: EdgeInsets.all(20),
-
-                                            child: Image.asset(
-                                              "assets/ride.png",
-                                              width: 70,
-                                            ),
-                                          ),
-                                        ],
-                                      )
-                                      : Container(
-                                        width: 120,
-                                        height: 120,
-                                        padding: EdgeInsets.all(20),
-                                        decoration: BoxDecoration(
-                                          color: Color.fromRGBO(
-                                            255,
-                                            255,
-                                            255,
-                                            0.5,
-                                          ),
-                                          borderRadius: BorderRadius.circular(
-                                            60,
-                                          ),
-                                          border: Border.all(
-                                            width: 3,
-                                            color: Colors.white,
-                                          ),
-                                        ),
-                                        child: Image.asset(
-                                          "assets/ride.png",
-                                          width: 70,
-                                        ),
-                                      ),
-                              onTap: () {
-                                if (uploaded == true) {
-                                  if (widget.preserved == true) {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) => Wrapper(),
-                                      ),
-                                    );
-                                  } else {
-                                    Navigator.pop(context);
-                                  }
-                                } else {
-                                  if (isRunning == false &&
-                                      widget.preserved == false) {
-                                    startBackgroundService();
-                                    state.put('state', [
-                                      widget.rid,
-                                      [widget.ad!.id, widget.ad!.name],
-                                    ]);
-                                    setState(() {
-                                      isRunning = true;
-                                    });
-                                  } else {
-                                    if (uploaded == false) {
-                                      stopBackgroundService();
-                                      readData();
-                                      setState(() {
-                                        isRunning = false;
-                                      });
-                                    }
-                                    state.clear();
-                                  }
-                                }
-                              },
-                            ),
-                            SizedBox(height: 8),
-                            Text(
-                              "Tap the icon to ${(uploaded == true)
-                                  ? "exit"
-                                  : (isRunning == false)
-                                  ? "start"
-                                  : "stop"}",
-                              style: GoogleFonts.poppins(
-                                fontSize: 12,
-                                color: Colors.white.withOpacity(
-                                  _animation.value / 2,
+                                  ],
                                 ),
                               ),
                             ),
-                          ],
+                          ),
                         ),
-
-                        SizedBox(),
-                      ],
+                        Column(
+                        mainAxisSize: MainAxisSize.max,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          
+                      
+                          Column(
+                            children: [
+                              Container(
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(20),
+                                  color: Colors.white,
+                                ),
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 8,
+                                ),
+                      
+                                child: Text(
+                                  (widget.ad!.name == "")
+                                      ? "FAST Ads"
+                                      : "${widget.ad!.name}",
+                                  style: GoogleFonts.baloo2(
+                                    color: Colors.grey.shade800,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                              SizedBox(height: 4),
+                              Column(
+                                children: [
+                                  for (int i = 2; i >= 1; i--)
+                                    Padding(
+                                      padding: const EdgeInsets.all(2),
+                                      child: Container(
+                                        width: 10.0 * i,
+                                        height: 10.0 * i,
+                                        decoration: BoxDecoration(
+                                          borderRadius: BorderRadius.circular(
+                                            10.0 * i,
+                                          ),
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                              SizedBox(height: 8),
+                              //Text("Realtime Rider Location", style: TextStyle(fontWeight: FontWeight.bold, color:  Colors.red, fontSize: 20),),
+                              //Lottie.asset('assets/rider.json'),
+                              InkWell(
+                                child: Stack(
+                                  alignment: Alignment.center,
+                                  children: [
+                                    (isRunning==true || widget.preserved==true)?SpinKitRipple(
+                                      color: Colors.white,
+                                      size: 120,
+                                      duration: Duration(seconds: 5),
+                                      
+                                    ):SpinKitPulse(
+                                      color: Colors.white,
+                                      size: 120,
+                                      duration: Duration(seconds: 8),
+                                    ),
+                                    Container(
+                                      width: 120,
+                                      height: 120,
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(60),
+                                        color:Colors.white.withOpacity(0.5)
+                                      ),
+                                      padding: EdgeInsets.all(20),
+                      
+                                      child: Image.asset(
+                                        "assets/ride.png",
+                                        width: 70,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                      
+                                onTap: () {
+                                  if (uploaded == true) {
+                                    if (widget.preserved == true) {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) => Wrapper(),
+                                        ),
+                                      );
+                                    } else {
+                                      Navigator.pop(context);
+                                    }
+                                  } else {
+                                    if (isRunning == false &&
+                                        widget.preserved == false) {
+                                          _controller.forward();
+                                      startBackgroundService();
+                                      state.put('state', [
+                                        widget.rid,
+                                        [widget.ad!.id, widget.ad!.name],
+                                      ]);
+                                      setState(() {
+                                        isRunning = true;
+                                      });
+                                      
+                                    } else {
+                                      if (uploaded == false) {
+                                        stopBackgroundService();
+                                        readData();
+                                        setState(() {
+                                          isRunning = false;
+                                        });
+                                      }
+                                      state.clear();
+                                    }
+                                  }
+                                },
+                              ),
+                              SizedBox(height: 8),
+                              Text(
+                                "Tap the icon to ${(uploaded == true)
+                                    ? "exit"
+                                    : (isRunning == true || widget.preserved==true)
+                                    ? "stop"
+                                    : "start"}",
+                                style: GoogleFonts.poppins(
+                                  fontSize: 12,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ],
+                          ),
+                      
+                          SizedBox(),
+                        ],
+                      ),]
                     ),
                   ),
                 ),

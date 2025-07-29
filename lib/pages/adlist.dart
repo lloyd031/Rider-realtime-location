@@ -15,7 +15,8 @@ import 'package:http/http.dart' as http;
 class Ad_List extends StatefulWidget {
   final bool viewRide;
   final String? rid;
-  Ad_List(this.rid, this.viewRide);
+  final Function setAds;
+  Ad_List(this.rid, this.viewRide,this.setAds);
 
   @override
   State<Ad_List> createState() => _Ad_ListState();
@@ -42,6 +43,7 @@ class _Ad_ListState extends State<Ad_List> {
           "ads from api " + item['name'],
         ); // or access fields like item['name'], item['id'], etc.
       }
+      widget.setAds(adsList.length);
     } else {
       throw Exception('Failed to load users');
     }

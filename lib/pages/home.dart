@@ -22,7 +22,7 @@ class Home extends StatefulWidget {
 class _HomeState extends State<Home> {
   late double lat;
   late double long;
-
+  int ads=0;
   int screenView = 1;
   var _currentIndex = 1;
   void switchScreen(int screenNumber) {
@@ -39,7 +39,11 @@ class _HomeState extends State<Home> {
     lat = 9.3068;
     long = 123.3054;
   }
-
+  void setAds(int count){
+    setState(() {
+      ads=count;
+    });
+  }
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
@@ -144,7 +148,7 @@ class _HomeState extends State<Home> {
                           ),
                         ),
                         Text(
-                          "5 campaigns",
+                          "${ads} campaigns",
                           style: GoogleFonts.poppins(
                             textStyle: TextStyle(
                               color: Color.fromRGBO(89, 106, 253, 1),
@@ -263,7 +267,7 @@ class _HomeState extends State<Home> {
                       ),
                     ),
                     SizedBox(height: 8),
-                    Ad_List(widget.rid, false),
+                    Ad_List(widget.rid, false,setAds),
                     SizedBox(height: 8),
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 4),
