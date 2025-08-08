@@ -13,7 +13,7 @@ class Wrapper extends StatefulWidget {
   @override
   _WrapperState createState() => _WrapperState();
 }
-
+RiderObj? rider;
 class _WrapperState extends State<Wrapper> {
    Future<Position> _determinePosition() async {
         bool locServiceEnabled;
@@ -87,7 +87,11 @@ class _WrapperState extends State<Wrapper> {
     {
       var userBox=Hive.box('userBox');
       String? rider_id=userBox.get(0)[1].toString();
-      return Home(rider_id,login);
+      String? fn=userBox.get(0)[2];
+      String? ln=userBox.get(0)[3];
+      String? uname=userBox.get(0)[4];
+      
+      return Home(rider_id: rider_id,fn:fn ,ln: ln,uname: uname,login: login,);
       
     }
   }

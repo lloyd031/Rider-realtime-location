@@ -47,7 +47,8 @@ class DatabaseService {
   }
 
   //get ad stream
-  Stream<List<Ad_Model>> get getAssignedAd{
+  /**
+   * Stream<List<Ad_Model>> get getAssignedAd{
     return riderCollection.doc(riderId).collection("assigned_ads").snapshots().map(_adFromSnapShot);
   }
   List<Ad_Model> _adFromSnapShot(QuerySnapshot snapshot)
@@ -57,6 +58,7 @@ class DatabaseService {
       return Ad_Model(doc.id,"");
     }).toList();
   }
+   */
 
   // ignore: slash_for_doc_comments
   /**
@@ -74,16 +76,19 @@ class DatabaseService {
   
   
   
-   Stream<Ad_Model?> get adData
+   
+  /**
+   * 
+   * Stream<Ad_Model?> get adData
   {
       return adCollection.doc(adId).snapshots().map(_adDataFromSnapshot);  
   }
-  //
   Ad_Model? _adDataFromSnapshot(DocumentSnapshot snapshot)
   {
     
     return Ad_Model(adId,snapshot.get("name"));
   } 
+   */
   
   Stream<RiderObj?> get riderDetails
   {

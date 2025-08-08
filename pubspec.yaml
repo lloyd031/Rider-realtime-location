@@ -87,7 +87,7 @@ flutter:
   assets:
      - assets/rider.json
      - assets/rider.png
-     - assets/ride.png
+     - assets/loginicon.PNG
   #   - images/a_dot_ham.jpeg
 
   # An image asset can refer to one or more resolution-specific "variants", see

@@ -480,10 +480,11 @@ class _StartRideState extends State<StartRide> with SingleTickerProviderStateMix
                                       ),
                                       padding: EdgeInsets.all(20),
                       
-                                      child: Image.asset(
-                                        "assets/ride.png",
-                                        width: 70,
-                                      ),
+                                      child: Text("${(uploaded == true)
+                                    ? "Exit"
+                                    : (isRunning == true || widget.preserved==true)
+                                    ? "Stop"
+                                    : "Start"}"),
                                     ),
                                   ],
                                 ),
@@ -507,7 +508,7 @@ class _StartRideState extends State<StartRide> with SingleTickerProviderStateMix
                                       startBackgroundService();
                                       state.put('state', [
                                         widget.rid,
-                                        [widget.ad!.id, widget.ad!.name],
+                                        [widget.ad!.id, widget.ad!.name,widget.ad!.end,widget.ad!.exceed],
                                       ]);
                                       setState(() {
                                         isRunning = true;

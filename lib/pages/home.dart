@@ -5,15 +5,20 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:hive/hive.dart';
 import 'package:rider_realtime_location/models/Ad.dart';
+import 'package:rider_realtime_location/models/Rider.dart';
 import 'package:rider_realtime_location/pages/adlist.dart';
 import 'package:rider_realtime_location/pages/components/mydrawer.dart';
 import 'package:rider_realtime_location/pages/startride.dart';
 import 'package:salomon_bottom_bar/salomon_bottom_bar.dart';
 
 class Home extends StatefulWidget {
+  
+  final String? rider_id;
+  final String? fn;
+  final String? ln;
+  final String? uname;
   final Function login;
-  final String? rid;
-  const Home(this.rid, this.login);
+  const Home({super.key, required this.rider_id,required this.fn,required this.ln,required this.uname, required this.login});
 
   @override
   State<Home> createState() => _HomeState();
@@ -67,7 +72,7 @@ class _HomeState extends State<Home> {
     List<String> lbl = ["Campaigns", "My Rides", "Completed"];
 
     return (_myStateBox.isNotEmpty)
-        ? StartRide(key[0], Ad_Model(key[1][0], key[1][1]), true)
+        ? StartRide(key[0], Ad_Model(key[1][0], key[1][1],key[1][2], key[1][3]), true)
         : Scaffold(
           bottomNavigationBar: SalomonBottomBar(
             currentIndex: _currentIndex,
@@ -82,7 +87,7 @@ class _HomeState extends State<Home> {
               SalomonBottomBarItem(
                 icon: Icon(Icons.home_filled),
                 title: Text("Home"),
-                selectedColor: Colors.purple,
+                selectedColor: Colors.pink,
               ),
 
               
@@ -91,7 +96,7 @@ class _HomeState extends State<Home> {
               SalomonBottomBarItem(
                 icon: Icon(Icons.person),
                 title: Text("Me"),
-                selectedColor: Colors.teal,
+                selectedColor: Colors.pink,
               ),
             ],
           ),
@@ -126,7 +131,7 @@ class _HomeState extends State<Home> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      "Good to see you, Jack!",
+                      "Good to see you, ${widget.fn}",
                       style: GoogleFonts.inter(
                         textStyle: TextStyle(
                           color: Color.fromRGBO(172, 172, 172, 1),
@@ -148,7 +153,7 @@ class _HomeState extends State<Home> {
                           ),
                         ),
                         Text(
-                          "${ads} campaigns",
+                          "${ads} campaign${(ads>1)?'s':''}",
                           style: GoogleFonts.poppins(
                             textStyle: TextStyle(
                               color: Color.fromRGBO(89, 106, 253, 1),
@@ -267,7 +272,7 @@ class _HomeState extends State<Home> {
                       ),
                     ),
                     SizedBox(height: 8),
-                    Ad_List(widget.rid, false,setAds),
+                    Ad_List(widget.rider_id, false,setAds),
                     SizedBox(height: 8),
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 4),

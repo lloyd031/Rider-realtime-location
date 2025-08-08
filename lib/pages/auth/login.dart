@@ -35,130 +35,164 @@ class _LogInState extends State<LogIn> {
         )
         : Scaffold(
           body: SafeArea(
-            child: Padding(
-              
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    "Let's Sign you in",
-                    style: GoogleFonts.poppins(
-                      textStyle: TextStyle(
-                        color: Color.fromRGBO(51, 51, 51, 1),
-                        fontSize: 20,
-                        fontWeight: FontWeight.w600,
+            child: Container(
+              decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          Color.fromRGBO(215, 43, 52, 1),
+                          Color.fromRGBO(215, 43, 52, 1),
+                          Color.fromRGBO(215, 43, 52, 0.9), // Darker blue
+                        ],
                       ),
                     ),
-                  ),
-                  Text(
-                    "Sign in and start your ride.",
-                    style: GoogleFonts.inter(
-                      textStyle: TextStyle(
-                        color: Color.fromRGBO(155, 155, 155, 1),
-                        fontSize: 16,
-                      ),
-                    ),
-                  ),
-                  SizedBox(height: 20),
-
-                  Form(
-                    key: _formKey,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        TextFormField(
-                          decoration: InputDecoration(
-                            labelText: 'Username',
-                            border: OutlineInputBorder(),
-                          ),
-                          keyboardType: TextInputType.emailAddress,
-                          onChanged: (val) {
-                            setState(() {
-                              uname = val;
-                            });
-                          },
-                          validator: (val) => val!.isEmpty ? "Rquired" : null,
-                        ),
-                        SizedBox(height: 16),
-                        TextFormField(
-                          decoration: InputDecoration(
-                            labelText: 'Password',
-                            border: OutlineInputBorder(),
-                          ),
-                          onChanged: (val) {
-                            setState(() {
-                              pw = val;
-                            });
-                          },
-                          validator: (val) => val!.isEmpty ? "Rquired" : null,
-                          obscureText: true,
-                        ),
-                        
-                        Text(error, style: TextStyle(color: Colors.red)),
-                        
-                       
-                        SizedBox(height: 8,),
-                        InkWell(
-                          
-                          onTap: () async {
-                            if (_formKey.currentState!.validate()) {
-                              setState(() {
-                                loading = true;
-                              });
-                              dynamic result = await auth.login(uname, pw);
-                              if (result == null) {
-                                setState(() {
-                                  error = "Invalid email or password";
-                                  loading = false;
-                                });
-                                ;
-                              } else {
-                                widget.login();
-                              }
-                            }
-                          },
-                          child: Container(
-                            width: double.maxFinite,
-                            padding: EdgeInsets.symmetric(vertical: 12),
-                            decoration: BoxDecoration(
-                              color: Color.fromRGBO(119, 95, 231, 1.0),
-                              borderRadius: BorderRadius.circular(8)
-                            ),
-                            child: Center(child: Text(
-                      "Sign in",
-                      style: GoogleFonts.inter(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Image.asset("assets/loginicon.PNG", width: 90),
+                    Text(
+                      "Let's Sign you in",
+                      style: GoogleFonts.poppins(
                         textStyle: TextStyle(
                           color: Colors.white,
-                          fontSize: 16,
+                          fontSize: 30,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
-                    ),)),
-                        ),
-                        Row(
-                          mainAxisSize: MainAxisSize.max,
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                      "Dont have an account ?",
+                    ),
+                    Text(
+                      "Sign in and start your ride",
                       style: GoogleFonts.inter(
-                        textStyle: TextStyle(
-                          color: Color.fromRGBO(51, 51, 51, 1),
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                        ),
+                        textStyle: TextStyle(color: Colors.white.withAlpha(180), fontSize: 16),
                       ),
                     ),
-                            TextButton(onPressed:(){widget.switchAuth();}, child:Text("Signup")),
-                          ],
+                    SizedBox(height: 20),
+
+                    Form(
+                      key: _formKey,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(
+                            decoration: BoxDecoration(
+                              color: Color.fromRGBO(224,64, 78, 1),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            padding: EdgeInsets.symmetric(horizontal: 12),
+                            child: TextFormField(
+                               style: TextStyle(color: Colors.white), 
+                              decoration: InputDecoration(
+                                labelText: 'Username',
+                                labelStyle: TextStyle(color: Colors.white.withAlpha(98)),
+                                prefixIcon: Icon(Icons.person_outline, color: Colors.white.withAlpha(98),),
+                                border: InputBorder.none,
+                              ),
+                              onChanged: (val) {
+                                setState(() {
+                                  uname = val;
+                                });
+                              },
+                            ),
+                          ),
+                          SizedBox(height: 8),
+                          Container(
+                            decoration: BoxDecoration(
+                              color: Color.fromRGBO(224,64, 78, 1),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 12),
+                              child: TextFormField(
+                                 style: TextStyle(color: Colors.white), 
+                                decoration: InputDecoration(
+                                  labelText: 'Password',
+                                  labelStyle: TextStyle(color: Colors.white.withAlpha(98)),
+                                prefixIcon: Icon(Icons.lock_outline, color: Colors.white.withAlpha(98),),
+                                  border: InputBorder.none,
+                                ),
+                                onChanged: (val) {
+                                  setState(() {
+                                    pw = val;
+                                  });
+                                },
+                                
+                                obscureText: true,
+                              ),
+                            ),
+                          ),
+                          
+
+                          SizedBox(height: 8),
+                          InkWell(
+                            onTap: () async {
+                              if (_formKey.currentState!.validate()) {
+                                setState(() {
+                                  loading = true;
+                                });
+                                dynamic result = await auth.login(uname, pw);
+                                if (result == null) {
+                                  setState(() {
+                                    error = " * Invalid email or password";
+                                    loading = false;
+                                  });
+                                  ;
+                                } else {
+                                  widget.login();
+                                }
+                              }
+                            },
+                            child: Container(
+                              width: double.maxFinite,
+                              padding: EdgeInsets.symmetric(vertical: 12),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Center(
+                                child: Text(
+                                  "Sign in",
+                                  style: GoogleFonts.inter(
+                                    textStyle: TextStyle(
+                                      color: Color.fromRGBO(215, 43, 52, 1),
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                          
+                          /**
+                           * Row(
+                            mainAxisSize: MainAxisSize.max,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                        "Dont have an account ?",
+                        style: GoogleFonts.inter(
+                          textStyle: TextStyle(
+                            color: Color.fromRGBO(51, 51, 51, 1),
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
-                        
-                      ],
+                      ),
+                              TextButton(onPressed:(){widget.switchAuth();}, child:Text("Signup")),
+                            ],
+                          ),
+                           */
+                        ],
+                      ),
                     ),
-                  ),
-                ],
+                    SizedBox(height: 8),
+                    Text(error, style: TextStyle(color: Colors.white)),
+                  ],
+                ),
               ),
             ),
           ),

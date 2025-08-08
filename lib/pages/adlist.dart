@@ -2,6 +2,7 @@ import 'dart:collection';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:rider_realtime_location/main.dart';
 import 'package:rider_realtime_location/models/Ad.dart';
@@ -16,7 +17,7 @@ class Ad_List extends StatefulWidget {
   final bool viewRide;
   final String? rid;
   final Function setAds;
-  Ad_List(this.rid, this.viewRide,this.setAds);
+  Ad_List(this.rid, this.viewRide, this.setAds);
 
   @override
   State<Ad_List> createState() => _Ad_ListState();
@@ -24,7 +25,7 @@ class Ad_List extends StatefulWidget {
 
 class _Ad_ListState extends State<Ad_List> {
   List<Ad_Model?> adsList = [];
-  
+
   Future<void> fetchAds() async {
     String rider_id = widget.rid.toString();
     final response = await http.get(
@@ -35,9 +36,20 @@ class _Ad_ListState extends State<Ad_List> {
       adsList.clear();
       final List<dynamic> data = jsonDecode(response.body);
       for (var item in data) {
-        Ad_Model ad = Ad_Model(item['id'].toString(), item['name']);
+        DateTime inputDate = DateTime.parse(item['end']);
+        DateTime today = DateTime.now();
+
+      
+        Ad_Model ad = Ad_Model(
+          item['id'].toString(),
+          item['name'],
+          item['end'],
+          (inputDate.isBefore(today))?true:false
+        );
         setState(() {
-          adsList.add(ad);
+          if(ad.exceed==false){
+            adsList.add(ad);
+          }
         });
         print(
           "ads from api " + item['name'],
@@ -95,14 +107,14 @@ class AdDetail extends StatelessWidget {
     required this.rid,
     required this.viewRide,
     required this.ad,
-    required this.indx
+    required this.indx,
   });
 
   @override
   Widget build(BuildContext context) {
     List<Color> bg = [
-     Colors.blueAccent,
-     Colors.green.shade500,
+      Colors.blueAccent,
+      Colors.green.shade500,
       Colors.redAccent,
     ];
     final screenWidth = MediaQuery.of(context).size.width;
@@ -125,7 +137,7 @@ class AdDetail extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           width: screenWidth,
           decoration: BoxDecoration(
-            color:(indx!<3)?bg[indx!]:bg[indx!%3],
+            color: (indx! < 3) ? bg[indx!] : bg[indx! % 3],
             borderRadius: BorderRadius.circular(12),
           ),
           child: Column(
@@ -143,7 +155,7 @@ class AdDetail extends StatelessWidget {
               ),
               SizedBox(height: 4),
               Text(
-                "Lorem ipsum dolor sit amet, consect adipiscing elit olor.",
+                "To continue, please enable your device's location services.",
                 style: GoogleFonts.inter(
                   textStyle: TextStyle(
                     color: const Color.fromARGB(164, 255, 255, 255),
@@ -157,7 +169,7 @@ class AdDetail extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    "July 30 2025.",
+                    "${DateFormat('MMMM d, y').format(DateTime.parse(ad!.end))}",
                     style: GoogleFonts.inter(
                       textStyle: TextStyle(
                         color: Colors.white,
@@ -166,11 +178,14 @@ class AdDetail extends StatelessWidget {
                       ),
                     ),
                   ),
-                  Icon(Icons.arrow_circle_right_rounded, color: Colors.white, size: 28,)
+                  Icon(
+                    Icons.arrow_circle_right_rounded,
+                    color: Colors.white,
+                    size: 28,
+                  ),
                 ],
               ),
               SizedBox(height: 4),
-              
             ],
           ),
         ),

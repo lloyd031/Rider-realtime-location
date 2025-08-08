@@ -21,6 +21,6 @@ class _AuthenticateState extends State<Authenticate> {
   @override
   Widget build(BuildContext context) {
     
-    return (islogin==true)?LogIn(switchAuth: switchAuth,login: widget.login,):SignUp(switchAuth: switchAuth,);
+    return LogIn(switchAuth: switchAuth,login: widget.login,);
   }
 }
